@@ -1,0 +1,48 @@
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const getToken = () => localStorage.getItem('booknight_token');
+
+/**
+ * Core request helper. Throws an Error with the backend's message on
+ * non-2xx responses so callers can just try/catch.
+ */
+async function request(path, { method = 'GET', body, auth = true } = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) {
+    const token = getToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(data.message || `Request failed with status ${res.status}`);
+  }
+
+  return data;
+}
+
+export const api = {
+  register: (payload) => request('/auth/register', { method: 'POST', body: payload, auth: false }),
+  login: (payload) => request('/auth/login', { method: 'POST', body: payload, auth: false }),
+  forgotPassword: (payload) => request('/auth/forgot-password', { method: 'POST', body: payload, auth: false }),
+  resetPassword: (payload) => request('/auth/reset-password', { method: 'POST', body: payload, auth: false }),
+  me: () => request('/auth/me'),
+
+  listWorkspaces: () => request('/workspaces'),
+  createWorkspace: (payload) => request('/workspaces', { method: 'POST', body: payload }),
+
+  listBookmarks: (workspaceId) => request(`/bookmarks?workspaceId=${workspaceId}&limit=60`),
+  createBookmark: (payload) => request('/bookmarks', { method: 'POST', body: payload }),
+  getBookmark: (id) => request(`/bookmarks/${id}`),
+  updateBookmark: (id, payload) => request(`/bookmarks/${id}`, { method: 'PATCH', body: payload }),
+  deleteBookmark: (id) => request(`/bookmarks/${id}`, { method: 'DELETE' }),
+};
+
+export { getToken, BASE_URL };
