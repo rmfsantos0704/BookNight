@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Workspace = require('../models/Workspace');
 const User = require('../models/User');
+const Bookmark = require('../models/Bookmark');
 
 // @route POST /api/workspaces
 const createWorkspace = asyncHandler(async (req, res) => {
@@ -37,7 +38,9 @@ const listWorkspaces = asyncHandler(async (req, res) => {
 
 // @route GET /api/workspaces/:id
 const getWorkspace = asyncHandler(async (req, res) => {
-  const workspace = await Workspace.findById(req.params.id);
+  const workspace = await Workspace.findById(req.params.id)
+    .populate('ownerId', 'email displayName')
+    .populate('members', 'email displayName');
 
   if (!workspace) {
     res.status(404);
@@ -80,9 +83,72 @@ const addMember = asyncHandler(async (req, res) => {
   res.json({ success: true, workspace });
 });
 
-// @route DELETE /api/workspaces/:id/members/:memberId
-const removeMember = asyncHandler(async (req, res) => {
+// @route PATCH /api/workspaces/:id
+// Only the owner can rename or change visibility - members can view/add
+// bookmarks but shouldn't be able to rename someone else's workspace.
+const updateWorkspace = asyncHandler(async (req, res) => {
   const workspace = await Workspace.findById(req.params.id);
+
+  if (!workspace) {
+    res.status(404);
+    throw new Error('Workspace not found');
+  }
+
+  if (workspace.ownerId.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Only the workspace owner can edit this workspace');
+  }
+
+  const { name, isPublic } = req.body;
+  if (name !== undefined) {
+    if (!name.trim()) {
+      res.status(400);
+      throw new Error('Workspace name cannot be empty');
+    }
+    workspace.name = name.trim();
+  }
+  if (isPublic !== undefined) {
+    workspace.isPublic = Boolean(isPublic);
+  }
+
+  await workspace.save();
+  res.json({ success: true, workspace });
+});
+
+// @route DELETE /api/workspaces/:id
+// Owner-only. Cascades to delete every bookmark in the workspace and pulls
+// the workspace reference off every member's user doc, so nothing is left
+// orphaned.
+const deleteWorkspace = asyncHandler(async (req, res) => {
+  const workspace = await Workspace.findById(req.params.id);
+
+  if (!workspace) {
+    res.status(404);
+    throw new Error('Workspace not found');
+  }
+
+  if (workspace.ownerId.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Only the workspace owner can delete this workspace');
+  }
+
+  await Bookmark.deleteMany({ workspaceId: workspace._id });
+  await User.updateMany(
+    { workspaces: workspace._id },
+    { $pull: { workspaces: workspace._id } }
+  );
+  await workspace.deleteOne();
+
+  res.json({ success: true, message: 'Workspace and its bookmarks were deleted' });
+});
+
+// @route DELETE /api/workspaces/:id/members/:memberId
+// Owner-only, and the owner can't remove themselves this way (delete the
+// whole workspace instead) - keeps every workspace guaranteed to have an
+// accountable owner.
+const removeMember = asyncHandler(async (req, res) => {
+  const { id, memberId } = req.params;
+  const workspace = await Workspace.findById(id);
 
   if (!workspace) {
     res.status(404);
@@ -94,34 +160,16 @@ const removeMember = asyncHandler(async (req, res) => {
     throw new Error('Only the workspace owner can remove members');
   }
 
-  const memberId = req.params.memberId;
-  if (!memberId) {
+  if (workspace.ownerId.toString() === memberId) {
     res.status(400);
-    throw new Error('memberId is required');
-  }
-
-  if (memberId === workspace.ownerId.toString()) {
-    res.status(400);
-    throw new Error('The workspace owner cannot be removed from the workspace');
-  }
-
-  const existingMember = await User.findById(memberId);
-  if (!existingMember) {
-    res.status(404);
-    throw new Error('No user found with that id');
-  }
-
-  const inMembers = workspace.members.some((m) => m.toString() === memberId);
-  if (!inMembers) {
-    res.status(404);
-    throw new Error('Member is not part of this workspace');
+    throw new Error('The owner cannot be removed from the workspace');
   }
 
   workspace.members = workspace.members.filter((m) => m.toString() !== memberId);
   await workspace.save();
   await User.findByIdAndUpdate(memberId, { $pull: { workspaces: workspace._id } });
 
-  res.json({ success: true, workspace, message: 'Member removed' });
+  res.json({ success: true, workspace });
 });
 
 module.exports = {
@@ -129,5 +177,7 @@ module.exports = {
   listWorkspaces,
   getWorkspace,
   addMember,
+  updateWorkspace,
+  deleteWorkspace,
   removeMember,
 };

@@ -8,6 +8,11 @@ export const useBoardStore = create((set, get) => ({
   loadingBookmarks: false,
   error: null,
 
+  // Fully populated (owner/members with email+displayName) detail for
+  // whichever workspace is currently open in the settings modal.
+  workspaceDetail: null,
+  loadingWorkspaceDetail: false,
+
   searchQuery: '',
   searchResults: [],
   searching: false,
@@ -106,4 +111,57 @@ export const useBoardStore = create((set, get) => ({
   },
 
   clearSearch: () => set({ searchQuery: '', searchResults: [], searchError: null }),
+
+  loadWorkspaceDetail: async (workspaceId) => {
+    set({ loadingWorkspaceDetail: true });
+    try {
+      const data = await api.getWorkspace(workspaceId);
+      set({ workspaceDetail: data.workspace, loadingWorkspaceDetail: false });
+    } catch (err) {
+      set({ loadingWorkspaceDetail: false, error: err.message });
+    }
+  },
+
+  clearWorkspaceDetail: () => set({ workspaceDetail: null }),
+
+  renameWorkspace: async (workspaceId, name) => {
+    const data = await api.updateWorkspace(workspaceId, { name });
+    set((state) => ({
+      workspaces: state.workspaces.map((w) => (w._id === workspaceId ? data.workspace : w)),
+      workspaceDetail:
+        state.workspaceDetail?._id === workspaceId
+          ? { ...state.workspaceDetail, name: data.workspace.name }
+          : state.workspaceDetail,
+    }));
+  },
+
+  // If the deleted workspace was the active one, falls back to whatever
+  // workspace is now first in the list (or null if none remain).
+  deleteWorkspace: async (workspaceId) => {
+    await api.deleteWorkspace(workspaceId);
+    set((state) => {
+      const remaining = state.workspaces.filter((w) => w._id !== workspaceId);
+      const wasActive = state.activeWorkspaceId === workspaceId;
+      return {
+        workspaces: remaining,
+        activeWorkspaceId: wasActive ? null : state.activeWorkspaceId,
+        bookmarks: wasActive ? [] : state.bookmarks,
+        workspaceDetail: null,
+      };
+    });
+    const { activeWorkspaceId, workspaces } = get();
+    if (!activeWorkspaceId && workspaces.length > 0) {
+      get().setActiveWorkspace(workspaces[0]._id);
+    }
+  },
+
+  addWorkspaceMember: async (workspaceId, email) => {
+    const data = await api.addWorkspaceMember(workspaceId, email);
+    set({ workspaceDetail: data.workspace });
+  },
+
+  removeWorkspaceMember: async (workspaceId, memberId) => {
+    const data = await api.removeWorkspaceMember(workspaceId, memberId);
+    set({ workspaceDetail: data.workspace });
+  },
 }));

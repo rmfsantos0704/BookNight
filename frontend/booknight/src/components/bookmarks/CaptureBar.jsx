@@ -23,7 +23,7 @@ export default function CaptureBar() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-6">
+    <form onSubmit={handleSubmit} className="mb-6 w-full max-w-xl">
       <div className="flex items-center gap-3 rounded-card border border-line bg-white/40 px-4 py-3">
         <input
           type="url"
@@ -31,7 +31,7 @@ export default function CaptureBar() {
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Paste a link to save it here"
-          className="flex-1 bg-transparent text-ink placeholder:text-ink/40 outline-none"
+          className="flex-1 min-w-0 bg-transparent text-ink placeholder:text-ink/40 outline-none"
         />
         <button
           type="submit"

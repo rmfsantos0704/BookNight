@@ -38,6 +38,13 @@ export const api = {
 
   listWorkspaces: () => request('/workspaces'),
   createWorkspace: (payload) => request('/workspaces', { method: 'POST', body: payload }),
+  getWorkspace: (id) => request(`/workspaces/${id}`),
+  updateWorkspace: (id, payload) => request(`/workspaces/${id}`, { method: 'PATCH', body: payload }),
+  deleteWorkspace: (id) => request(`/workspaces/${id}`, { method: 'DELETE' }),
+  addWorkspaceMember: (id, email) =>
+    request(`/workspaces/${id}/members`, { method: 'POST', body: { email } }),
+  removeWorkspaceMember: (id, memberId) =>
+    request(`/workspaces/${id}/members/${memberId}`, { method: 'DELETE' }),
 
   listBookmarks: (workspaceId) => request(`/bookmarks?workspaceId=${workspaceId}&limit=60`),
   searchBookmarks: (workspaceId, q) =>

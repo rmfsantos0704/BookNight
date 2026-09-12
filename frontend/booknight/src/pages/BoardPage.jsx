@@ -5,6 +5,7 @@ import CaptureBar from '../components/bookmarks/CaptureBar';
 import SearchBar from '../components/bookmarks/SearchBar';
 import BentoGrid from '../components/bookmarks/BentoGrid';
 import EditBookmarkModal from '../components/bookmarks/EditBookmarkModal';
+import WorkspaceSettingsModal from '../components/layout/WorkspaceSettingsModal';
 
 export default function BoardPage() {
   const {
@@ -30,7 +31,7 @@ export default function BoardPage() {
     <div className="flex min-h-screen bg-canvas">
       <Sidebar />
 
-      <main className="flex-1 px-10 py-8 max-w-6xl">
+      <main className="flex-1 px-10 py-8 max-w-full">
         {workspaces.length === 0 ? (
           <p className="text-ink/60">Create a workspace from the sidebar to get started.</p>
         ) : (
@@ -60,6 +61,7 @@ export default function BoardPage() {
         )}
       </main>
       <EditBookmarkModal />
+      <WorkspaceSettingsModal />
     </div>
   );
 }

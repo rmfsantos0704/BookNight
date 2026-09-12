@@ -2,18 +2,11 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useBoardStore } from '../../store/useBoardStore';
 import { useUIStore } from '../../store/useUIStore';
 
-// Cards with a scraped image get a bigger tile - the bento rhythm comes
-// from real content, not arbitrary placement.
-function spanClasses(bookmark) {
-  if (bookmark.imageUrl) return 'col-span-2 row-span-2';
-  return 'col-span-1 row-span-1';
-}
-
 function faviconOrDot(bookmark) {
   if (bookmark.faviconUrl) {
-    return <img src={bookmark.faviconUrl} alt="" className="w-4 h-4 rounded-sm" />;
+    return <img src={bookmark.faviconUrl} alt="" className="h-4 w-4 rounded-sm object-cover" />;
   }
-  return <span className="w-2 h-2 rounded-full bg-accent inline-block" />;
+  return <span className="h-2 w-2 rounded-full bg-accent inline-block" />;
 }
 
 export default function BookmarkCard({ bookmark }) {
@@ -30,15 +23,16 @@ export default function BookmarkCard({ bookmark }) {
   }
 
   return (
-    <div className={`${spanClasses(bookmark)} rounded-card border border-line bg-white/60 overflow-hidden flex flex-col`}>
+    <article className="flex min-h-[280px] flex-col overflow-hidden rounded-card border border-line bg-white/80 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-md">
       <AnimatePresence mode="wait">
         {isPending ? (
           <motion.div
             key="pending"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex-1 p-4 flex flex-col gap-2 animate-pulse"
+            className="flex min-h-[280px] flex-col gap-2 p-4 animate-pulse"
           >
+            <div className="h-36 w-full rounded-card bg-line" />
             <div className="h-3 w-2/3 bg-line rounded" />
             <div className="h-2 w-1/2 bg-line rounded" />
             <div className="flex-1" />
@@ -50,58 +44,72 @@ export default function BookmarkCard({ bookmark }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 flex flex-col"
+            className="flex flex-1 flex-col"
           >
             {bookmark.imageUrl && (
-              <div className="h-32 bg-line overflow-hidden">
+              <div className="h-36 overflow-hidden border-b border-line bg-line">
                 <img
                   src={bookmark.imageUrl}
                   alt=""
-                  className="w-full h-full object-cover"
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  className="h-full w-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
               </div>
             )}
-            <div className="p-4 flex-1 flex flex-col gap-1.5">
-              <p className="font-display text-base text-ink leading-snug line-clamp-2">
+
+            <div className="flex flex-1 flex-col gap-3 p-4">
+              <div className="flex items-center gap-2">
+                {faviconOrDot(bookmark)}
+                <span className="text-[11px] font-medium uppercase tracking-wide text-ink/50">
+                  {hostname}
+                </span>
+              </div>
+
+              <a
+                href={bookmark.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-display text-base leading-snug text-ink transition hover:text-accent"
+              >
                 {isFailed ? 'Could not load this link' : bookmark.title || hostname}
-              </p>
+              </a>
+
               {!isFailed && bookmark.description && (
-                <p className="text-sm text-ink/60 line-clamp-2">{bookmark.description}</p>
+                <p className="text-sm leading-5 text-ink/60 line-clamp-3">{bookmark.description}</p>
               )}
+
               {!isFailed && bookmark.tags?.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                <div className="flex flex-wrap gap-1.5">
                   {bookmark.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs bg-accent-soft text-accent rounded-full px-2 py-0.5"
-                    >
+                    <span key={tag} className="rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent">
                       {tag}
                     </span>
                   ))}
                 </div>
               )}
-              <div className="mt-auto pt-2 flex items-center justify-between">
+
+              <div className="mt-auto flex items-center justify-between border-t border-line pt-3">
                 <a
                   href={bookmark.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs text-ink/60 hover:text-accent"
+                  className="text-xs font-medium text-ink/60 transition hover:text-accent"
                 >
-                  {faviconOrDot(bookmark)}
-                  {hostname}
+                  Open link
                 </a>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => openEditModal(bookmark._id)}
-                    className="text-xs text-ink/40 hover:text-accent"
+                    className="text-xs text-ink/50 hover:text-accent"
                     aria-label="Edit bookmark"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => removeBookmark(bookmark._id)}
-                    className="text-xs text-ink/40 hover:text-red-600"
+                    className="text-xs text-ink/50 hover:text-red-600"
                     aria-label="Remove bookmark"
                   >
                     Remove
@@ -112,6 +120,6 @@ export default function BookmarkCard({ bookmark }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </article>
   );
 }
