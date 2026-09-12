@@ -7,7 +7,9 @@
 "scripts": {
   "start": "node src/server.js",
   "dev": "nodemon src/server.js",
-  "worker": "node src/workerServer.js"
+  "worker": "node src/workerServer.js",
+  "search:index": "node scripts/createSearchIndex.js",
+  "search:status": "node scripts/checkSearchIndex.js"
 },
   "dependencies": {
     "bcryptjs": "^2.4.3",

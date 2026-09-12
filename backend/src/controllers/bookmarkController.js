@@ -1,6 +1,8 @@
 const asyncHandler = require('express-async-handler');
+const mongoose = require('mongoose');
 const Bookmark = require('../models/Bookmark');
 const Workspace = require('../models/Workspace');
+const { enqueueScrapeJob } = require('../queues/bookmarkQueue');
 
 // Shared guard: throws unless the current user can access the workspace
 const assertWorkspaceAccess = async (workspaceId, userId) => {
@@ -52,16 +54,10 @@ const createBookmark = asyncHandler(async (req, res) => {
   // Return immediately - the client shows this as an optimistic "processing" card.
   res.status(201).json({ success: true, bookmark });
 
-  // Fire-and-forget: import the queue only when a scrape request is actually made.
-  // This avoids creating an eager Redis/BullMQ connection during app startup.
-  try {
-    const { enqueueScrapeJob } = require('../queues/bookmarkQueue');
-    enqueueScrapeJob({ bookmarkId: bookmark._id.toString(), url }).catch((err) => {
-      console.error(`Failed to enqueue scrape job for ${bookmark._id}:`, err.message);
-    });
-  } catch (err) {
-    console.error(`Failed to load scrape queue for ${bookmark._id}:`, err.message);
-  }
+  // Fire-and-forget: enqueue after responding so the request isn't blocked on Redis.
+  enqueueScrapeJob({ bookmarkId: bookmark._id.toString(), url }).catch((err) => {
+    console.error(`Failed to enqueue scrape job for ${bookmark._id}:`, err.message);
+  });
 });
 
 // @route GET /api/bookmarks?workspaceId=&status=&tag=&page=&limit=
@@ -160,11 +156,95 @@ const deleteBookmark = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Bookmark deleted' });
 });
 
+// @route GET /api/bookmarks/search?workspaceId=&q=
+// Fuzzy, typo-tolerant, autocomplete-aware search across title/tags/description,
+// scoped to one workspace, using the Atlas Search index created by
+// scripts/createSearchIndex.js. Tags and title are boosted above description,
+// matching the architecture's "custom scoring" requirement.
+const searchBookmarks = asyncHandler(async (req, res) => {
+  const { workspaceId, q } = req.query;
+
+  if (!workspaceId || !q || !q.trim()) {
+    res.status(400);
+    throw new Error('workspaceId and q are required');
+  }
+
+  await assertWorkspaceAccess(workspaceId, req.user._id).catch((err) => {
+    res.status(err.statusCode || 500);
+    throw err;
+  });
+
+  const query = q.trim();
+
+  const results = await Bookmark.aggregate([
+    {
+      $search: {
+        index: 'bookmark_search',
+        compound: {
+          filter: [
+            {
+              equals: {
+                path: 'workspaceId',
+                value: new mongoose.Types.ObjectId(workspaceId),
+              },
+            },
+          ],
+   should: [
+{
+  autocomplete: {
+    query,
+    path: 'title',
+    score: { boost: { value: 3 } },
+  },
+},
+  {
+    text: {
+      query,
+      path: 'title',
+      fuzzy: { maxEdits: 1 },
+      score: { boost: { value: 3 } },
+    },
+  },
+  {
+    text: {
+      query,
+      path: 'tags',
+      fuzzy: { maxEdits: 1 },
+      score: { boost: { value: 2 } },
+    },
+  },
+  {
+    text: {
+      query,
+      path: 'description',
+      fuzzy: { maxEdits: 1 },
+      score: { boost: { value: 1 } },
+    },
+  },
+],
+minimumShouldMatch: 1,
+        },
+      },
+    },
+    { $limit: 30 },
+    { $addFields: { score: { $meta: 'searchScore' } } },
+  ]).catch((err) => {
+    // Most common cause: the index hasn't finished building yet, or
+    // doesn't exist - surface a clear message instead of a raw Mongo error.
+    res.status(503);
+    throw new Error(
+      `Search failed - the Atlas Search index may still be building or missing. (${err.message})`
+    );
+  });
+
+  res.json({ success: true, count: results.length, bookmarks: results });
+});
+
 module.exports = {
-  assertWorkspaceAccess,
   createBookmark,
   listBookmarks,
   getBookmark,
   updateBookmark,
   deleteBookmark,
+  searchBookmarks,
 };

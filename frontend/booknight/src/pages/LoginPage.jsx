@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BrandLogo from '../components/common/BrandLogo';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -27,8 +28,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-graphite px-4">
       <div className="w-full max-w-sm">
-        <h1 className="font-display text-3xl text-canvas mb-1">Booknight</h1>
-        <p className="text-line mb-8 text-sm">Sign in to your workspace.</p>
+        <div className="mb-4 flex justify-center">
+          <BrandLogo className="justify-center" textClassName="text-canvas" />
+        </div>
+        <p className="text-line mb-8 text-sm text-center">Sign in to your workspace.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

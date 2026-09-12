@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useBoardStore } from '../../store/useBoardStore';
+import { useUIStore } from '../../store/useUIStore';
 
 // Cards with a scraped image get a bigger tile - the bento rhythm comes
 // from real content, not arbitrary placement.
@@ -17,6 +18,7 @@ function faviconOrDot(bookmark) {
 
 export default function BookmarkCard({ bookmark }) {
   const removeBookmark = useBoardStore((s) => s.removeBookmark);
+  const openEditModal = useUIStore((s) => s.openEditModal);
   const isPending = bookmark.status === 'pending';
   const isFailed = bookmark.status === 'failed';
 
@@ -67,6 +69,18 @@ export default function BookmarkCard({ bookmark }) {
               {!isFailed && bookmark.description && (
                 <p className="text-sm text-ink/60 line-clamp-2">{bookmark.description}</p>
               )}
+              {!isFailed && bookmark.tags?.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {bookmark.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="text-xs bg-accent-soft text-accent rounded-full px-2 py-0.5"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
               <div className="mt-auto pt-2 flex items-center justify-between">
                 <a
                   href={bookmark.url}
@@ -77,13 +91,22 @@ export default function BookmarkCard({ bookmark }) {
                   {faviconOrDot(bookmark)}
                   {hostname}
                 </a>
-                <button
-                  onClick={() => removeBookmark(bookmark._id)}
-                  className="text-xs text-ink/40 hover:text-red-600"
-                  aria-label="Remove bookmark"
-                >
-                  Remove
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => openEditModal(bookmark._id)}
+                    className="text-xs text-ink/40 hover:text-accent"
+                    aria-label="Edit bookmark"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => removeBookmark(bookmark._id)}
+                    className="text-xs text-ink/40 hover:text-red-600"
+                    aria-label="Remove bookmark"
+                  >
+                    Remove
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

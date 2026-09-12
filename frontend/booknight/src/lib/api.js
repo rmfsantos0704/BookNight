@@ -31,14 +31,17 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
 export const api = {
   register: (payload) => request('/auth/register', { method: 'POST', body: payload, auth: false }),
   login: (payload) => request('/auth/login', { method: 'POST', body: payload, auth: false }),
-  forgotPassword: (payload) => request('/auth/forgot-password', { method: 'POST', body: payload, auth: false }),
-  resetPassword: (payload) => request('/auth/reset-password', { method: 'POST', body: payload, auth: false }),
   me: () => request('/auth/me'),
+  forgotPassword: (payload) => request('/auth/forgot-password', { method: 'POST', body: payload, auth: false }),
+  resetPassword: (token, payload) =>
+    request(`/auth/reset-password/${token}`, { method: 'POST', body: payload, auth: false }),
 
   listWorkspaces: () => request('/workspaces'),
   createWorkspace: (payload) => request('/workspaces', { method: 'POST', body: payload }),
 
   listBookmarks: (workspaceId) => request(`/bookmarks?workspaceId=${workspaceId}&limit=60`),
+  searchBookmarks: (workspaceId, q) =>
+    request(`/bookmarks/search?workspaceId=${workspaceId}&q=${encodeURIComponent(q)}`),
   createBookmark: (payload) => request('/bookmarks', { method: 'POST', body: payload }),
   getBookmark: (id) => request(`/bookmarks/${id}`),
   updateBookmark: (id, payload) => request(`/bookmarks/${id}`, { method: 'PATCH', body: payload }),

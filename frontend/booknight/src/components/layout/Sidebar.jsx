@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useBoardStore } from '../../store/useBoardStore';
 import { useAuth } from '../../context/AuthContext';
+import BrandLogo from '../common/BrandLogo';
 
 export default function Sidebar() {
   const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace } = useBoardStore();
@@ -18,7 +19,9 @@ export default function Sidebar() {
 
   return (
     <aside className="w-60 shrink-0 bg-graphite h-screen sticky top-0 flex flex-col px-4 py-6">
-      <div className="font-display text-xl text-canvas mb-8">Booknight</div>
+      <div className="mb-8">
+        <BrandLogo imageClassName="h-12 w-12" textClassName="text-canvas" />
+      </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto">
         <p className="text-xs uppercase tracking-wide text-line-dark mb-2 px-2">Workspaces</p>

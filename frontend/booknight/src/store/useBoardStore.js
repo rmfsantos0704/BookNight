@@ -8,6 +8,11 @@ export const useBoardStore = create((set, get) => ({
   loadingBookmarks: false,
   error: null,
 
+  searchQuery: '',
+  searchResults: [],
+  searching: false,
+  searchError: null,
+
   loadWorkspaces: async () => {
     const data = await api.listWorkspaces();
     set({ workspaces: data.workspaces });
@@ -73,4 +78,32 @@ export const useBoardStore = create((set, get) => ({
     await api.deleteBookmark(bookmarkId);
     set((state) => ({ bookmarks: state.bookmarks.filter((b) => b._id !== bookmarkId) }));
   },
+
+  editBookmark: async (bookmarkId, updates) => {
+    const data = await api.updateBookmark(bookmarkId, updates);
+    set((state) => ({
+      bookmarks: state.bookmarks.map((b) => (b._id === bookmarkId ? data.bookmark : b)),
+      searchResults: state.searchResults.map((b) => (b._id === bookmarkId ? data.bookmark : b)),
+    }));
+    return data.bookmark;
+  },
+
+  setSearchQuery: (query) => set({ searchQuery: query }),
+
+  runSearch: async (query) => {
+    const { activeWorkspaceId } = get();
+    if (!activeWorkspaceId || !query.trim()) {
+      set({ searchResults: [], searching: false, searchError: null });
+      return;
+    }
+    set({ searching: true, searchError: null });
+    try {
+      const data = await api.searchBookmarks(activeWorkspaceId, query.trim());
+      set({ searchResults: data.bookmarks, searching: false });
+    } catch (err) {
+      set({ searchError: err.message, searching: false, searchResults: [] });
+    }
+  },
+
+  clearSearch: () => set({ searchQuery: '', searchResults: [], searchError: null }),
 }));
