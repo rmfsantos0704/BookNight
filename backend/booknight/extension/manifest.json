@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Booknight",
   "version": "1.0.0",
-  "description": "Save the current tab to your Booknight workspace in one click.",
+  "description": "Save the current page to your Booknight workspace in one click.",
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -17,5 +17,5 @@
     "128": "icons/icon128.png"
   },
   "permissions": ["activeTab", "storage"],
-  "host_permissions": ["http://localhost:5000/*"]
+  "host_permissions": ["https://book-night-h3oj.vercel.app/*"]
 }

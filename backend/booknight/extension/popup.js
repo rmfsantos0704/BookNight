@@ -1,7 +1,6 @@
-// Change this to your deployed API URL when publishing the extension.
-// During local development it points at the backend running on localhost.
-const API_BASE = 'http://localhost:5000/api';
-const CLIENT_ORIGIN = 'http://localhost:5173';
+// Points at the deployed Booknight backend/frontend.
+const API_BASE = 'https://book-night-h3oj.vercel.app/api';
+const CLIENT_ORIGIN = 'https://book-night-lilac.vercel.app';
 
 const $ = (id) => document.getElementById(id);
 
