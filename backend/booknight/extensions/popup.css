@@ -1,0 +1,165 @@
+:root {
+  --ink: #1C1B19;
+  --canvas: #F7F5F0;
+  --graphite: #23262B;
+  --graphite-soft: #2E323A;
+  --accent: #3E6259;
+  --accent-soft: #C9D9C9;
+  --line: #D8D3C7;
+  --line-dark: #3A3E45;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 300px;
+  margin: 0;
+  padding: 16px;
+  background: var(--graphite);
+  font-family: "Work Sans", "Segoe UI", sans-serif;
+  color: var(--canvas);
+}
+
+.brand {
+  font-family: Georgia, "Fraunces", serif;
+  font-size: 20px;
+  margin-bottom: 14px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+label {
+  display: block;
+  font-size: 12px;
+  color: var(--line);
+  margin: 10px 0 4px;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line-dark);
+  background: var(--graphite-soft);
+  color: var(--canvas);
+  font-size: 13px;
+  font-family: inherit;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.btn-primary {
+  width: 100%;
+  margin-top: 14px;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--canvas);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--line);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-button:hover {
+  color: var(--canvas);
+}
+
+.error {
+  color: #f2a3a3;
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+
+.success {
+  color: var(--accent-soft);
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+
+.muted {
+  color: var(--line);
+  font-size: 13px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.tab-preview {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  background: var(--graphite-soft);
+  border: 1px solid var(--line-dark);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.tab-preview img {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.tab-info {
+  min-width: 0;
+}
+
+.tab-title {
+  margin: 0;
+  font-size: 13px;
+  color: var(--canvas);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tab-url {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--line);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.footer-row a {
+  font-size: 12px;
+  color: var(--accent-soft);
+  text-decoration: underline;
+}

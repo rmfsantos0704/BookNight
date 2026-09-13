@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Booknight</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="brand">Booknight</div>
+
+  <!-- Shown when no valid session exists -->
+  <section id="login-view" class="view hidden">
+    <form id="login-form">
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" required autocomplete="email" />
+
+      <label for="login-password">Password</label>
+      <input id="login-password" type="password" required autocomplete="current-password" />
+
+      <p id="login-error" class="error hidden"></p>
+
+      <button type="submit" id="login-submit" class="btn-primary">Sign in</button>
+    </form>
+  </section>
+
+  <!-- Shown once logged in - the actual one-click save flow -->
+  <section id="main-view" class="view hidden">
+    <div class="tab-preview">
+      <img id="tab-favicon" alt="" />
+      <div class="tab-info">
+        <p id="tab-title" class="tab-title"></p>
+        <p id="tab-url" class="tab-url"></p>
+      </div>
+    </div>
+
+    <label for="workspace-select">Save to</label>
+    <select id="workspace-select"></select>
+
+    <p id="save-error" class="error hidden"></p>
+    <p id="save-success" class="success hidden">Saved ✓</p>
+
+    <button id="save-button" class="btn-primary">Save to Booknight</button>
+
+    <div class="footer-row">
+      <a id="open-board-link" href="#" target="_blank">Open Booknight</a>
+      <button id="logout-button" class="link-button">Sign out</button>
+    </div>
+  </section>
+
+  <!-- Shown briefly while checking stored session -->
+  <section id="loading-view" class="view">
+    <p class="muted">Loading…</p>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
+</html>

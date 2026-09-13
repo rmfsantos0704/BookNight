@@ -14,40 +14,36 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 connectDB();
 
 const app = express();
-const allowedOrigins = (process.env.CLIENT_ORIGIN || '')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
 
 // --- Global middleware ---
 app.use(helmet());
+
+// Allow the web client(s), plus browser extension origins (chrome-extension://,
+// moz-extension://) - the extension isn't served from CLIENT_ORIGIN so it
+// needs its own allowance. We don't rely on cookies (the extension sends a
+// Bearer token manually), so this stays safe even though it's permissive
+// about extension origins specifically.
+// CLIENT_ORIGIN may be a single origin or a comma-separated list (e.g. for
+// multiple Vercel preview/production frontend URLs).
+const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
-        callback(null, origin || true);
-      } else {
-        callback(null, false);
-      }
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      if (/^(chrome|moz)-extension:\/\//.test(origin)) return callback(null, true);
+      return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 app.use(express.json({ limit: '1mb' }));
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
-
-app.get('/', (req, res) => {
-  res.json({
-    success: true,
-    status: 'ok',
-    service: 'booknight-api',
-    uptime: process.uptime(),
-  });
-});
 
 // Basic rate limiting - tighten per-route (e.g. login) later if needed
 app.use(
@@ -60,6 +56,7 @@ app.use(
 );
 
 // --- Routes ---
+app.get('/', (req, res) => res.json({ status: 'ok', service: 'booknight-api' }));
 app.get('/api/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
 app.use('/api/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
