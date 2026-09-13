@@ -38,6 +38,15 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    service: 'booknight-api',
+    uptime: process.uptime(),
+  });
+});
+
 // Basic rate limiting - tighten per-route (e.g. login) later if needed
 app.use(
   rateLimit({
