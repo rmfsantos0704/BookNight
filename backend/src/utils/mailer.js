@@ -1,16 +1,16 @@
 const nodemailer = require('nodemailer');
 
 const smtpConfigured = () =>
-  Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  Boolean(process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS);
 
 let transporter = null;
 const getTransporter = () => {
   if (!transporter && smtpConfigured()) {
     transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: Number(process.env.SMTP_PORT) === 465,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT) || 587,
+      secure: process.env.EMAIL_SECURE === 'true',
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
     });
   }
   return transporter;
@@ -26,12 +26,12 @@ const sendPasswordResetEmail = async (toEmail, resetUrl) => {
     console.log('\n--- Password reset requested (SMTP not configured) ---');
     console.log(`To: ${toEmail}`);
     console.log(`Reset link: ${resetUrl}`);
-    console.log('Set SMTP_HOST/SMTP_USER/SMTP_PASS in .env to send real emails.\n');
+    console.log('Set EMAIL_HOST/EMAIL_USER/EMAIL_PASS in .env to send real emails.\n');
     return;
   }
 
   await getTransporter().sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     to: toEmail,
     subject: 'Reset your Booknight password',
     text: `Someone requested a password reset for your Booknight account.\n\nReset your password here: ${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, you can ignore this email.`,
@@ -48,12 +48,12 @@ const sendVerificationEmail = async (toEmail, code) => {
     console.log('\n--- Email verification code requested (SMTP not configured) ---');
     console.log(`To: ${toEmail}`);
     console.log(`Verification code: ${code}`);
-    console.log('Set SMTP_HOST/SMTP_USER/SMTP_PASS in .env to send real emails.\n');
+    console.log('Set EMAIL_HOST/EMAIL_USER/EMAIL_PASS in .env to send real emails.\n');
     return;
   }
 
   await getTransporter().sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
     to: toEmail,
     subject: 'Verify your Booknight account',
     text: `Your Booknight verification code is: ${code}\n\nThis code expires in 10 minutes. If you didn't create a Booknight account, you can ignore this email.`,
