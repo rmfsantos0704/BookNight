@@ -3,6 +3,8 @@ const http = require('http');
 const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const { startScrapeWorker } = require('./workers/bookmarkWorker');
+const { startDigestWorker } = require('./workers/digestWorker');
+const { scheduleDigestCheck } = require('./queues/DigestQueue');
 
 // Render's free tier only sleeps *Web Services*, but a "Web Service" is
 // really just anything that binds to a port and answers HTTP requests.
@@ -36,9 +38,14 @@ const run = async () => {
   const worker = await startScrapeWorker();
   console.log('Worker: listening for scrape jobs on the bookmark-scrape queue');
 
+  const digestWorker = await startDigestWorker();
+  await scheduleDigestCheck();
+  console.log('Worker: digest checker scheduled (runs daily at 08:00 UTC)');
+
   const shutdown = async () => {
     console.log('Worker: shutting down...');
     await worker.close();
+    await digestWorker.close();
     healthServer.close();
     await mongoose.disconnect();
     process.exit(0);

@@ -61,4 +61,37 @@ const sendVerificationEmail = async (toEmail, code) => {
   });
 };
 
-module.exports = { sendPasswordResetEmail, sendVerificationEmail };
+/**
+ * Sends a digest email listing newly-saved bookmarks in a workspace.
+ * `bookmarks` is an array of { title, url, description }. Throws (rather
+ * than silently console-logging) if SMTP isn't configured, since digests
+ * are a scheduled background job with no user watching a console.
+ */
+const sendDigestEmail = async (toEmail, workspaceName, bookmarks) => {
+  if (!smtpConfigured()) {
+    throw new Error('Email is not configured on the server (EMAIL_HOST/EMAIL_USER/EMAIL_PASS)');
+  }
+
+  const itemsText = bookmarks
+    .map((b) => `- ${b.title || b.url}\n  ${b.url}`)
+    .join('\n\n');
+
+  const itemsHtml = bookmarks
+    .map(
+      (b) =>
+        `<li style="margin-bottom:12px;"><a href="${b.url}" style="font-weight:600;">${b.title || b.url}</a>${
+          b.description ? `<br><span style="color:#666;font-size:14px;">${b.description}</span>` : ''
+        }</li>`
+    )
+    .join('');
+
+  await getTransporter().sendMail({
+    from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+    to: toEmail,
+    subject: `Booknight digest: ${bookmarks.length} new link${bookmarks.length === 1 ? '' : 's'} in ${workspaceName}`,
+    text: `New links saved in "${workspaceName}":\n\n${itemsText}`,
+    html: `<p>New links saved in <strong>${workspaceName}</strong>:</p><ul style="padding-left:20px;">${itemsHtml}</ul>`,
+  });
+};
+
+module.exports = { sendPasswordResetEmail, sendVerificationEmail, sendDigestEmail };

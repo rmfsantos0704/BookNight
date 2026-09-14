@@ -2,6 +2,14 @@ import { useState, useEffect } from 'react';
 import { useUIStore } from '../../store/useUIStore';
 import { useBoardStore } from '../../store/useBoardStore';
 import { useAuth } from '../../context/AuthContext';
+import { api } from '../../lib/api';
+
+const CHANNEL_LABELS = { email: 'Email', telegram: 'Telegram', discord: 'Discord' };
+const DESTINATION_HINTS = {
+  email: 'you@example.com',
+  telegram: 'Telegram chat ID (message @userinfobot to find yours)',
+  discord: 'Discord channel webhook URL',
+};
 
 export default function WorkspaceSettingsModal() {
   const managingWorkspaceId = useUIStore((s) => s.managingWorkspaceId);
@@ -31,14 +39,38 @@ export default function WorkspaceSettingsModal() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
 
+  const [digests, setDigests] = useState([]);
+  const [loadingDigests, setLoadingDigests] = useState(false);
+  const [digestChannel, setDigestChannel] = useState('email');
+  const [digestFrequency, setDigestFrequency] = useState('daily');
+  const [digestDestination, setDigestDestination] = useState('');
+  const [addingDigest, setAddingDigest] = useState(false);
+  const [digestError, setDigestError] = useState('');
+
+  const loadDigests = async (workspaceId) => {
+    setLoadingDigests(true);
+    try {
+      const data = await api.listDigests(workspaceId);
+      setDigests(data.digests);
+    } catch {
+      // Non-owners get a 403 here, which is fine - just show no digests.
+      setDigests([]);
+    } finally {
+      setLoadingDigests(false);
+    }
+  };
+
   useEffect(() => {
     if (managingWorkspaceId) {
       loadWorkspaceDetail(managingWorkspaceId);
+      loadDigests(managingWorkspaceId);
       setConfirmingDelete(false);
       setMemberError('');
       setDeleteError('');
+      setDigestError('');
     } else {
       clearWorkspaceDetail();
+      setDigests([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [managingWorkspaceId]);
@@ -97,6 +129,44 @@ export default function WorkspaceSettingsModal() {
     } catch (err) {
       setDeleteError(err.message);
       setDeleting(false);
+    }
+  };
+
+  const handleAddDigest = async (e) => {
+    e.preventDefault();
+    if (!digestDestination.trim()) return;
+    setAddingDigest(true);
+    setDigestError('');
+    try {
+      const data = await api.createDigest(managingWorkspaceId, {
+        channel: digestChannel,
+        frequency: digestFrequency,
+        destination: digestDestination.trim(),
+      });
+      setDigests((prev) => [data.digest, ...prev]);
+      setDigestDestination('');
+    } catch (err) {
+      setDigestError(err.message);
+    } finally {
+      setAddingDigest(false);
+    }
+  };
+
+  const handleToggleDigest = async (digest) => {
+    try {
+      const data = await api.updateDigest(managingWorkspaceId, digest._id, { enabled: !digest.enabled });
+      setDigests((prev) => prev.map((d) => (d._id === digest._id ? data.digest : d)));
+    } catch (err) {
+      setDigestError(err.message);
+    }
+  };
+
+  const handleDeleteDigest = async (digestId) => {
+    try {
+      await api.deleteDigest(managingWorkspaceId, digestId);
+      setDigests((prev) => prev.filter((d) => d._id !== digestId));
+    } catch (err) {
+      setDigestError(err.message);
     }
   };
 
@@ -201,6 +271,90 @@ export default function WorkspaceSettingsModal() {
               )}
               {memberError && <p className="text-sm text-red-600">{memberError}</p>}
             </div>
+
+            {/* Digests */}
+            {isOwner && (
+              <div className="space-y-2 border-t border-line pt-4">
+                <p className="text-sm text-ink/70">Digest notifications</p>
+                <p className="text-xs text-ink/50">
+                  Get a summary of new links pushed to email, Telegram, or Discord on a schedule.
+                </p>
+
+                {loadingDigests ? (
+                  <p className="text-sm text-ink/40">Loading…</p>
+                ) : (
+                  <ul className="space-y-1.5">
+                    {digests.length === 0 && (
+                      <li className="text-sm text-ink/40">No digests set up yet.</li>
+                    )}
+                    {digests.map((digest) => (
+                      <li key={digest._id} className="flex items-center justify-between text-sm gap-2">
+                        <span className="text-ink truncate">
+                          <span className="font-medium">{CHANNEL_LABELS[digest.channel]}</span>
+                          {' · '}
+                          {digest.frequency}
+                          {' · '}
+                          <span className="text-ink/50">{digest.destination}</span>
+                        </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => handleToggleDigest(digest)}
+                            className={`text-xs ${digest.enabled ? 'text-accent' : 'text-ink/40'} hover:underline`}
+                          >
+                            {digest.enabled ? 'On' : 'Off'}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDigest(digest._id)}
+                            className="text-xs text-ink/40 hover:text-red-600"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <form onSubmit={handleAddDigest} className="space-y-2 pt-1">
+                  <div className="flex gap-2">
+                    <select
+                      value={digestChannel}
+                      onChange={(e) => setDigestChannel(e.target.value)}
+                      className="rounded-card border border-line bg-white/60 px-2 py-2 text-sm text-ink outline-none focus-visible:border-accent"
+                    >
+                      <option value="email">Email</option>
+                      <option value="telegram">Telegram</option>
+                      <option value="discord">Discord</option>
+                    </select>
+                    <select
+                      value={digestFrequency}
+                      onChange={(e) => setDigestFrequency(e.target.value)}
+                      className="rounded-card border border-line bg-white/60 px-2 py-2 text-sm text-ink outline-none focus-visible:border-accent"
+                    >
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={digestDestination}
+                      onChange={(e) => setDigestDestination(e.target.value)}
+                      placeholder={DESTINATION_HINTS[digestChannel]}
+                      className="flex-1 rounded-card border border-line bg-white/60 px-3 py-2 text-sm text-ink outline-none focus-visible:border-accent"
+                    />
+                    <button
+                      type="submit"
+                      disabled={addingDigest || !digestDestination.trim()}
+                      className="rounded-card bg-graphite text-canvas text-sm font-medium px-3 disabled:opacity-50"
+                    >
+                      {addingDigest ? 'Adding…' : 'Add'}
+                    </button>
+                  </div>
+                </form>
+                {digestError && <p className="text-sm text-red-600">{digestError}</p>}
+              </div>
+            )}
 
             {/* Delete */}
             {isOwner && (

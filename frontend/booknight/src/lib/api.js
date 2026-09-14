@@ -52,6 +52,12 @@ export const api = {
     request(`/workspaces/${id}/members`, { method: 'POST', body: { email } }),
   removeWorkspaceMember: (id, memberId) =>
     request(`/workspaces/${id}/members/${memberId}`, { method: 'DELETE' }),
+  listDigests: (id) => request(`/workspaces/${id}/digests`),
+  createDigest: (id, payload) => request(`/workspaces/${id}/digests`, { method: 'POST', body: payload }),
+  updateDigest: (id, digestId, payload) =>
+    request(`/workspaces/${id}/digests/${digestId}`, { method: 'PATCH', body: payload }),
+  deleteDigest: (id, digestId) =>
+    request(`/workspaces/${id}/digests/${digestId}`, { method: 'DELETE' }),
 
   listBookmarks: (workspaceId) => request(`/bookmarks?workspaceId=${workspaceId}&limit=60`),
   searchBookmarks: (workspaceId, q) =>
