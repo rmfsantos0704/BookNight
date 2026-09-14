@@ -18,6 +18,12 @@ const bookmarkSchema = new mongoose.Schema(
       required: [true, 'URL is required'],
       trim: true,
     },
+    // Precomputed by normalizeUrl() at creation time - lets duplicate checks
+    // use an indexed exact-match query instead of comparing raw URLs.
+    normalizedUrl: {
+      type: String,
+      index: true,
+    },
     title: {
       type: String,
       trim: true,
@@ -57,5 +63,7 @@ const bookmarkSchema = new mongoose.Schema(
 
 // Compound index: most list views are "all bookmarks in a workspace, newest first"
 bookmarkSchema.index({ workspaceId: 1, createdAt: -1 });
+// Compound index for the duplicate-detection lookup (workspace + normalized URL)
+bookmarkSchema.index({ workspaceId: 1, normalizedUrl: 1 });
 
 module.exports = mongoose.model('Bookmark', bookmarkSchema);

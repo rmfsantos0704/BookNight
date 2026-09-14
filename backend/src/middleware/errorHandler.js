@@ -41,6 +41,8 @@ const errorHandler = (err, req, res, next) => {
     // from an unrelated error object.
     ...(err.requiresVerification !== undefined && { requiresVerification: err.requiresVerification }),
     ...(err.email !== undefined && { email: err.email }),
+    ...(err.duplicate !== undefined && { duplicate: err.duplicate }),
+    ...(err.existingBookmark !== undefined && { existingBookmark: err.existingBookmark }),
     stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
   });
 };

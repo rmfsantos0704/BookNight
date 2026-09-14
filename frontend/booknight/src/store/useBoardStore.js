@@ -49,11 +49,19 @@ export const useBoardStore = create((set, get) => ({
 
   // Optimistic add - the backend returns the skeleton doc immediately, and
   // we poll it below until the worker finishes scraping metadata.
-  addBookmark: async (url, tags = []) => {
+  // If the URL is already saved in this workspace, the backend responds
+  // with a duplicate error (not silently created) - pass allowDuplicate:true
+  // to save it anyway once the caller has confirmed with the user.
+  addBookmark: async (url, tags = [], allowDuplicate = false) => {
     const { activeWorkspaceId } = get();
     if (!activeWorkspaceId) throw new Error('No active workspace selected');
 
-    const data = await api.createBookmark({ url, workspaceId: activeWorkspaceId, tags });
+    const data = await api.createBookmark({
+      url,
+      workspaceId: activeWorkspaceId,
+      tags,
+      allowDuplicate,
+    });
     set((state) => ({ bookmarks: [data.bookmark, ...state.bookmarks] }));
     get().pollBookmark(data.bookmark._id);
     return data.bookmark;

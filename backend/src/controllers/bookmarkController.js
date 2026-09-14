@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Bookmark = require('../models/Bookmark');
 const Workspace = require('../models/Workspace');
 const { enqueueScrapeJob } = require('../queues/bookmarkQueue');
+const { normalizeUrl } = require('../utils/normalizeUrl');
 
 // Shared guard: throws unless the current user can access the workspace
 const assertWorkspaceAccess = async (workspaceId, userId) => {
@@ -24,7 +25,7 @@ const assertWorkspaceAccess = async (workspaceId, userId) => {
 // Step 2-4 of the "Save a Link" data flow: create skeleton doc, return 201
 // immediately, then push a scrape job onto the Redis queue.
 const createBookmark = asyncHandler(async (req, res) => {
-  const { url, workspaceId, tags } = req.body;
+  const { url, workspaceId, tags, allowDuplicate } = req.body;
 
   if (!url || !workspaceId) {
     res.status(400);
@@ -43,10 +44,28 @@ const createBookmark = asyncHandler(async (req, res) => {
     throw err;
   });
 
+  const normalized = normalizeUrl(url);
+
+  // Smart duplicate detection: warn (don't block) if this URL - or an
+  // equivalent one differing only by tracking params/www/trailing slash -
+  // is already saved in this workspace. The client can resend with
+  // allowDuplicate:true to save it anyway.
+  if (normalized && !allowDuplicate) {
+    const existing = await Bookmark.findOne({ workspaceId, normalizedUrl: normalized });
+    if (existing) {
+      res.status(409);
+      const err = new Error('This link is already saved in this workspace.');
+      err.duplicate = true;
+      err.existingBookmark = existing;
+      throw err;
+    }
+  }
+
   const bookmark = await Bookmark.create({
     workspaceId: workspace._id,
     createdBy: req.user._id,
     url,
+    normalizedUrl: normalized,
     tags: Array.isArray(tags) ? tags : [],
     status: 'pending',
   });
@@ -189,40 +208,40 @@ const searchBookmarks = asyncHandler(async (req, res) => {
               },
             },
           ],
-   should: [
-{
-  autocomplete: {
-    query,
-    path: 'title',
-    score: { boost: { value: 3 } },
-  },
-},
-  {
-    text: {
-      query,
-      path: 'title',
-      fuzzy: { maxEdits: 1 },
-      score: { boost: { value: 3 } },
-    },
-  },
-  {
-    text: {
-      query,
-      path: 'tags',
-      fuzzy: { maxEdits: 1 },
-      score: { boost: { value: 2 } },
-    },
-  },
-  {
-    text: {
-      query,
-      path: 'description',
-      fuzzy: { maxEdits: 1 },
-      score: { boost: { value: 1 } },
-    },
-  },
-],
-minimumShouldMatch: 1,
+          should: [
+            {
+              autocomplete: {
+                query,
+                path: 'title',
+                score: { boost: { value: 3 } },
+              },
+            },
+            {
+              text: {
+                query,
+                path: 'title',
+                fuzzy: { maxEdits: 1 },
+                score: { boost: { value: 3 } },
+              },
+            },
+            {
+              text: {
+                query,
+                path: 'tags',
+                fuzzy: { maxEdits: 1 },
+                score: { boost: { value: 2 } },
+              },
+            },
+            {
+              text: {
+                query,
+                path: 'description',
+                fuzzy: { maxEdits: 1 },
+                score: { boost: { value: 1 } },
+              },
+            },
+          ],
+          minimumShouldMatch: 1,
         },
       },
     },
