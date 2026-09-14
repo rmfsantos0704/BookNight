@@ -21,20 +21,14 @@ const TRACKING_PARAMS = new Set([
  * fragment, and always represents the scheme as https (http/https variants
  * of the same domain are treated as the same page).
  *
- * Returns null for unparseable input or non-HTTP protocols rather than throwing, 
- * so callers can decide how to handle it.
+ * Returns null for unparseable input rather than throwing, so callers can
+ * decide how to handle it (e.g. skip duplicate-checking rather than 500).
  */
 function normalizeUrl(rawUrl) {
   try {
     const url = new URL(rawUrl);
 
-    // Filter out non-web schemas (like mailto:, ftp:, ws:)
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      return null;
-    }
-
-    // Use .host instead of .hostname to preserve port numbers (e.g., :8080)
-    const host = url.host.toLowerCase().replace(/^www\./, '');
+    const host = url.hostname.toLowerCase().replace(/^www\./, '');
 
     let pathname = url.pathname;
     if (pathname.length > 1 && pathname.endsWith('/')) {
@@ -45,7 +39,6 @@ function normalizeUrl(rawUrl) {
     for (const key of [...params.keys()]) {
       if (TRACKING_PARAMS.has(key.toLowerCase())) params.delete(key);
     }
-    
     // Sort remaining params so ?b=2&a=1 and ?a=1&b=2 normalize identically.
     params.sort();
     const query = params.toString();
