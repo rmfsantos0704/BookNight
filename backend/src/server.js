@@ -33,19 +33,17 @@ const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      // and check if the origin is in our allowed list
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+      if (/^(chrome|moz)-extension:\/\//.test(origin)) return callback(null, true);
+      // Vercel preview deployments get a fresh URL on every push
+      // (book-night-<hash>-rat-dawg.vercel.app) - a fixed CLIENT_ORIGIN list
+      // can never keep up with those, so allow this project's preview URL
+      // pattern specifically. Scoped to the "book-night...rat-dawg" prefix
+      // so this doesn't open the door to arbitrary vercel.app sites.
+      if (/^https:\/\/book-night-[a-z0-9-]+-rat-dawg\.vercel\.app$/.test(origin)) {
         return callback(null, true);
       }
-      
-      // Allow browser extensions
-      if (/^(chrome|moz)-extension:\/\//.test(origin)) {
-        return callback(null, true);
-      }
-      
-      // Gracefully reject others without throwing a 500 error
-      return callback(null, false);
+      return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
   })
