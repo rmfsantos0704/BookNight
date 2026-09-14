@@ -35,6 +35,12 @@ const errorHandler = (err, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     message,
+    // Passed through when a controller attaches these (e.g. login telling
+    // the client to redirect to email verification) - intentionally an
+    // allowlist, not a blanket spread, so we never leak unexpected fields
+    // from an unrelated error object.
+    ...(err.requiresVerification !== undefined && { requiresVerification: err.requiresVerification }),
+    ...(err.email !== undefined && { email: err.email }),
     stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
   });
 };

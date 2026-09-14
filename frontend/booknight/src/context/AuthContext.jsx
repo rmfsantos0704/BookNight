@@ -30,20 +30,20 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (email, password, displayName) => {
-    const data = await api.register({ email, password, displayName });
+    // No token yet - the backend creates an unverified account and emails
+    // a code. Caller (RegisterPage) redirects to the verify-email step.
+    return api.register({ email, password, displayName });
+  }, []);
+
+  const verifyEmail = useCallback(async (email, code) => {
+    const data = await api.verifyEmail({ email, code });
     localStorage.setItem(TOKEN_KEY, data.token);
     setUser(data.user);
     return data.user;
   }, []);
 
-  const forgotPassword = useCallback(async (email) => {
-    const data = await api.forgotPassword({ email });
-    return data;
-  }, []);
-
-  const resetPassword = useCallback(async (token, password) => {
-    const data = await api.resetPassword({ token, password });
-    return data;
+  const resendVerification = useCallback(async (email) => {
+    return api.resendVerification({ email });
   }, []);
 
   const logout = useCallback(() => {
@@ -52,7 +52,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, forgotPassword, resetPassword, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, login, register, verifyEmail, resendVerification, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

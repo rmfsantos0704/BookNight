@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import BrandLogo from '../components/common/BrandLogo';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -18,7 +17,7 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       await register(email, password, displayName);
-      navigate('/board');
+      navigate('/verify-email', { state: { email } });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -29,10 +28,8 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-graphite px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-4 flex justify-center">
-          <BrandLogo className="justify-center" textClassName="text-canvas" />
-        </div>
-        <p className="text-line mb-8 text-sm text-center">Create your account.</p>
+        <h1 className="font-display text-3xl text-canvas mb-1">Booknight</h1>
+        <p className="text-line mb-8 text-sm">Create your account.</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

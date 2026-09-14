@@ -19,6 +19,10 @@ export default function LoginPage() {
       await login(email, password);
       navigate('/board');
     } catch (err) {
+      if (err.requiresVerification) {
+        navigate('/verify-email', { state: { email: err.email || email } });
+        return;
+      }
       setError(err.message);
     } finally {
       setSubmitting(false);

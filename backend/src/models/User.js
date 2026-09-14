@@ -21,22 +21,36 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    resetPasswordToken: {
-      type: String,
-      default: undefined,
-      select: false,
-    },
-    resetPasswordExpires: {
-      type: Date,
-      default: undefined,
-      select: false,
-    },
     workspaces: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Workspace',
       },
     ],
+    // Only a hash of the reset token is ever stored - the raw token is
+    // emailed to the user and never touches the database, so a DB leak
+    // alone can't be used to forge a valid reset link.
+    resetPasswordTokenHash: {
+      type: String,
+      select: false,
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false,
+    },
+    // Email verification (2-step registration)
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationCodeHash: {
+      type: String,
+      select: false,
+    },
+    verificationCodeExpires: {
+      type: Date,
+      select: false,
+    },
   },
   { timestamps: true }
 );

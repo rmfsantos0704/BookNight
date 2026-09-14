@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const getToken = () => localStorage.getItem('booknight_token');
 
@@ -22,7 +22,11 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    throw new Error(data.message || `Request failed with status ${res.status}`);
+    const err = new Error(data.message || `Request failed with status ${res.status}`);
+    // Surface any extra fields the backend attached (e.g. login's
+    // requiresVerification/email, used to redirect to the verify-email page).
+    Object.assign(err, data);
+    throw err;
   }
 
   return data;
@@ -35,6 +39,9 @@ export const api = {
   forgotPassword: (payload) => request('/auth/forgot-password', { method: 'POST', body: payload, auth: false }),
   resetPassword: (token, payload) =>
     request(`/auth/reset-password/${token}`, { method: 'POST', body: payload, auth: false }),
+  verifyEmail: (payload) => request('/auth/verify-email', { method: 'POST', body: payload, auth: false }),
+  resendVerification: (payload) =>
+    request('/auth/resend-verification', { method: 'POST', body: payload, auth: false }),
 
   listWorkspaces: () => request('/workspaces'),
   createWorkspace: (payload) => request('/workspaces', { method: 'POST', body: payload }),

@@ -12,12 +12,18 @@ const { startScrapeWorker } = require('./workers/bookmarkWorker');
 // An external uptime pinger (e.g. UptimeRobot) hitting this endpoint every
 // ~10 minutes is what actually keeps the process from going idle.
 const startHealthServer = () => {
-  const port = process.env.PORT || 8080;
+  // Locally, the API and worker both read the same .env file, which sets
+  // PORT=5000 for the API - falling back to that here would collide when
+  // running both at once. WORKER_PORT lets them coexist locally. On Render,
+  // there's no shared .env (env vars come from Render's dashboard/platform),
+  // and Render auto-injects PORT for whatever service is deployed - so this
+  // still does the right thing in production even without WORKER_PORT set.
+  const port = process.env.WORKER_PORT || process.env.PORT || 8080;
   const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ status: 'ok', service: 'booknight-worker' }));
   });
-  server.listen(port, () => {
+  server.listen(port, '0.0.0.0', () => {
     console.log(`Worker: health check server listening on port ${port}`);
   });
   return server;
