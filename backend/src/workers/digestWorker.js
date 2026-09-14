@@ -2,8 +2,8 @@ const DigestSubscription = require('../models/Digestsubscription');
 const Bookmark = require('../models/Bookmark');
 const Workspace = require('../models/Workspace');
 const { sendDigestEmail } = require('../utils/mailer');
-const { sendTelegramDigest, sendDiscordDigest } = require('../utils/digestSenders');
-const { QUEUE_NAME } = require('./queues/DigestQueue');
+const { sendTelegramDigest, sendDiscordDigest } = require('../utils/DigestSender');
+const { QUEUE_NAME } = require('../queues/DigestQueue');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
