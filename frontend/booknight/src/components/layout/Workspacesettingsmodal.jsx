@@ -296,12 +296,22 @@ export default function WorkspaceSettingsModal() {
                           {' · '}
                           <span className="text-ink/50">{digest.destination}</span>
                         </span>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-3 shrink-0">
                           <button
+                            type="button"
+                            role="switch"
+                            aria-checked={digest.enabled}
+                            aria-label={`${digest.enabled ? 'Disable' : 'Enable'} this digest`}
                             onClick={() => handleToggleDigest(digest)}
-                            className={`text-xs ${digest.enabled ? 'text-accent' : 'text-ink/40'} hover:underline`}
+                            className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-150 ${
+                              digest.enabled ? 'bg-accent' : 'bg-line-dark/40'
+                            }`}
                           >
-                            {digest.enabled ? 'On' : 'Off'}
+                            <span
+                              className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-150 ${
+                                digest.enabled ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            />
                           </button>
                           <button
                             onClick={() => handleDeleteDigest(digest._id)}
