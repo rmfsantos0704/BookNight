@@ -2,17 +2,9 @@ const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const Bookmark = require('../models/Bookmark');
 const Workspace = require('../models/Workspace');
-<<<<<<< HEAD
-<<<<<<< HEAD
 const { normalizeUrl } = require('../utils/Normalizeurl');
-=======
-const { normalizeUrl } = require('../utils/normalizeUrl');
->>>>>>> parent of 90c8396 (Updated naming imports.)
-=======
 const { enqueueScrapeJob } = require('../queues/bookmarkQueue');
 const { normalizeUrl } = require('../utils/Normalizeurl');
->>>>>>> parent of e90b91f (Replaced render/redis with github actions scheduled job for scraping and digest sending.)
-
 // Shared guard: throws unless the current user can access the workspace
 const assertWorkspaceAccess = async (workspaceId, userId) => {
   const workspace = await Workspace.findById(workspaceId);
