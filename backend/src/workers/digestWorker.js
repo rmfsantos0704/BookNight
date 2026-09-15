@@ -3,7 +3,6 @@ const Bookmark = require('../models/Bookmark');
 const Workspace = require('../models/Workspace');
 const { sendDigestEmail } = require('../utils/mailer');
 const { sendTelegramDigest, sendDiscordDigest } = require('../utils/DigestSender');
-const { QUEUE_NAME } = require('../queues/DigestQueue');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -93,27 +92,4 @@ const runDigestCheck = async () => {
   return results;
 };
 
-const startDigestWorker = async () => {
-  const { Worker } = require('bullmq');
-  const connection = require('../config/redis');
-
-  const worker = new Worker(
-    QUEUE_NAME,
-    async () => {
-      const results = await runDigestCheck();
-      console.log(
-        `Digest check complete: ${results.sent} sent, ${results.skipped} skipped, ${results.failed} failed`
-      );
-      return results;
-    },
-    { connection }
-  );
-
-  worker.on('failed', (job, err) => {
-    console.error('Digest check job failed:', err.message);
-  });
-
-  return worker;
-};
-
-module.exports = { runDigestCheck, startDigestWorker, isDue };
+module.exports = { runDigestCheck, isDue };

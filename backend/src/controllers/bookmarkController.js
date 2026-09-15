@@ -2,8 +2,7 @@ const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const Bookmark = require('../models/Bookmark');
 const Workspace = require('../models/Workspace');
-const { enqueueScrapeJob } = require('../queues/bookmarkQueue');
-const { normalizeUrl } = require('../utils/Normalizeurl');
+const { normalizeUrl } = require('../utils/normalizeUrl');
 
 // Shared guard: throws unless the current user can access the workspace
 const assertWorkspaceAccess = async (workspaceId, userId) => {
@@ -22,8 +21,9 @@ const assertWorkspaceAccess = async (workspaceId, userId) => {
 };
 
 // @route POST /api/bookmarks
-// Step 2-4 of the "Save a Link" data flow: create skeleton doc, return 201
-// immediately, then push a scrape job onto the Redis queue.
+// Creates the skeleton doc as 'pending' and returns immediately. A scheduled
+// GitHub Action (scripts/runJobs.js) picks up pending bookmarks and scrapes
+// them - no queue push happens here anymore.
 const createBookmark = asyncHandler(async (req, res) => {
   const { url, workspaceId, tags, allowDuplicate } = req.body;
 
@@ -71,12 +71,8 @@ const createBookmark = asyncHandler(async (req, res) => {
   });
 
   // Return immediately - the client shows this as an optimistic "processing" card.
+  // A scheduled GitHub Action will pick this up within a couple minutes.
   res.status(201).json({ success: true, bookmark });
-
-  // Fire-and-forget: enqueue after responding so the request isn't blocked on Redis.
-  enqueueScrapeJob({ bookmarkId: bookmark._id.toString(), url }).catch((err) => {
-    console.error(`Failed to enqueue scrape job for ${bookmark._id}:`, err.message);
-  });
 });
 
 // @route GET /api/bookmarks?workspaceId=&status=&tag=&page=&limit=
