@@ -9,6 +9,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const workspaceRoutes = require('./routes/workspaceRoutes');
 const bookmarkRoutes = require('./routes/bookmarkRoutes');
+const internalRoutes = require('./routes/internalRoutes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 connectDB();
@@ -69,6 +70,7 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', uptime: process.up
 app.use('/api/auth', authRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
+app.use('/api/internal', internalRoutes);
 
 // --- Error handling (must be last) ---
 app.use(notFound);

@@ -1,5 +1,4 @@
 const Bookmark = require('../models/Bookmark');
-const { QUEUE_NAME } = require('../queues/bookmarkQueue');
 
 const parseMeta = (html, field) => {
   const pattern = new RegExp(`<meta[^>]+property=["']og:${field}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i');
@@ -32,20 +31,14 @@ const extractMetadata = async (url) => {
   }
 };
 
-const processScrapeJob = async (job) => {
-  const { bookmarkId, url } = job.data || {};
-
-  if (!bookmarkId || !url) {
-    return { status: 'failed', message: 'bookmarkId and url are required' };
-  }
-
+/**
+ * Processes ONE pending bookmark: scrapes it and updates its status.
+ * No longer takes a BullMQ job object - just the bookmark doc itself,
+ * so it can be called directly from a polling loop instead of a queue.
+ */
+const processBookmark = async (bookmark) => {
   try {
-    const bookmark = await Bookmark.findById(bookmarkId);
-    if (!bookmark) {
-      return { status: 'failed', message: 'Bookmark not found' };
-    }
-
-    const metadata = await extractMetadata(url);
+    const metadata = await extractMetadata(bookmark.url);
 
     bookmark.title = metadata.title || bookmark.title || '';
     bookmark.description = metadata.description || bookmark.description || '';
@@ -55,37 +48,51 @@ const processScrapeJob = async (job) => {
     bookmark.failureReason = '';
 
     await bookmark.save();
-
-    return { status: 'completed', bookmarkId };
+    return { status: 'completed', bookmarkId: bookmark._id };
   } catch (error) {
-    await Bookmark.findByIdAndUpdate(bookmarkId, {
-      status: 'failed',
-      failureReason: error.message,
-    });
-
-    throw error;
+    bookmark.status = 'failed';
+    bookmark.failureReason = error.message;
+    await bookmark.save();
+    return { status: 'failed', bookmarkId: bookmark._id, error: error.message };
   }
 };
 
-const startScrapeWorker = async () => {
-  const { Worker } = require('bullmq');
-  const connection = require('../config/redis');
+const STALE_PROCESSING_MS = 3 * 60 * 1000; // 3 minutes
 
-  const worker = new Worker(
-    QUEUE_NAME,
-    async (job) => processScrapeJob(job),
-    { connection }
-  );
+/**
+ * Finds bookmarks still marked 'pending' and processes them. Called
+ * repeatedly by the polling route/script instead of listening on a queue.
+ *
+ * Each bookmark is atomically "claimed" (-> processing) via findOneAndUpdate
+ * before scraping, so two overlapping runs can't both grab and scrape the
+ * same bookmark. Also reclaims bookmarks stuck in 'processing' for too long
+ * (e.g. a serverless invocation that got killed mid-scrape by a platform
+ * timeout) rather than leaving them stranded forever.
+ */
+const processPendingBookmarks = async (limit = 20) => {
+  const results = { completed: 0, failed: 0, claimed: 0 };
+  const staleCutoff = new Date(Date.now() - STALE_PROCESSING_MS);
 
-  worker.on('completed', (job) => {
-    console.log(`Scrape job completed: ${job.id}`);
-  });
+  const candidates = await Bookmark.find({
+    $or: [{ status: 'pending' }, { status: 'processing', updatedAt: { $lt: staleCutoff } }],
+  })
+    .select('_id')
+    .limit(limit);
 
-  worker.on('failed', (job, err) => {
-    console.error(`Scrape job failed: ${job?.id}`, err.message);
-  });
+  for (const { _id } of candidates) {
+    const claimed = await Bookmark.findOneAndUpdate(
+      { _id, $or: [{ status: 'pending' }, { status: 'processing', updatedAt: { $lt: staleCutoff } }] },
+      { status: 'processing' },
+      { new: true }
+    );
+    if (!claimed) continue; // another run already claimed it
 
-  return worker;
+    results.claimed += 1;
+    const result = await processBookmark(claimed);
+    results[result.status] += 1;
+  }
+
+  return results;
 };
 
-module.exports = { startScrapeWorker, processScrapeJob, extractMetadata };
+module.exports = { extractMetadata, processBookmark, processPendingBookmarks };

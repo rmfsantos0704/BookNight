@@ -12,7 +12,7 @@ function faviconOrDot(bookmark) {
 export default function BookmarkCard({ bookmark }) {
   const removeBookmark = useBoardStore((s) => s.removeBookmark);
   const openEditModal = useUIStore((s) => s.openEditModal);
-  const isPending = bookmark.status === 'pending';
+  const isPending = bookmark.status === 'pending' || bookmark.status === 'processing';
   const isFailed = bookmark.status === 'failed';
 
   let hostname = '';

@@ -67,15 +67,19 @@ export const useBoardStore = create((set, get) => ({
     return data.bookmark;
   },
 
-  // Simple poll loop: checks every 1.5s (up to 10 tries) for the worker to
-  // flip status from pending -> completed/failed, then patches it into state.
+  // Poll loop: checks for the external cron-triggered scrape to finish.
+  // Latency is now minutes-scale (an external scheduler triggers processing
+  // every 5-10 min), not the near-instant BullMQ latency this used to have -
+  // so this polls less frequently but for much longer than before.
   pollBookmark: (bookmarkId) => {
     let attempts = 0;
+    const MAX_ATTEMPTS = 90; // ~15 minutes at 10s intervals
     const interval = setInterval(async () => {
       attempts += 1;
       try {
         const data = await api.getBookmark(bookmarkId);
-        if (data.bookmark.status !== 'pending' || attempts >= 10) {
+        const stillWorking = data.bookmark.status === 'pending' || data.bookmark.status === 'processing';
+        if (!stillWorking || attempts >= MAX_ATTEMPTS) {
           clearInterval(interval);
           set((state) => ({
             bookmarks: state.bookmarks.map((b) => (b._id === bookmarkId ? data.bookmark : b)),
@@ -84,7 +88,7 @@ export const useBoardStore = create((set, get) => ({
       } catch {
         clearInterval(interval);
       }
-    }, 1500);
+    }, 10000);
   },
 
   removeBookmark: async (bookmarkId) => {

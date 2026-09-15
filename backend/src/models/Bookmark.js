@@ -49,7 +49,10 @@ const bookmarkSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['pending', 'completed', 'failed'],
+      // 'processing' guards against two overlapping poll runs (e.g. an
+      // external cron trigger firing while a previous run is still working)
+      // from scraping the same bookmark twice.
+      enum: ['pending', 'processing', 'completed', 'failed'],
       default: 'pending',
       index: true,
     },
