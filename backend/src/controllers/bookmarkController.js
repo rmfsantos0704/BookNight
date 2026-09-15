@@ -2,7 +2,7 @@ const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const Bookmark = require('../models/Bookmark');
 const Workspace = require('../models/Workspace');
-const { normalizeUrl } = require('../utils/normalizeUrl');
+const { normalizeUrl } = require('../utils/NormalizeUrl');
 
 // Shared guard: throws unless the current user can access the workspace
 const assertWorkspaceAccess = async (workspaceId, userId) => {
