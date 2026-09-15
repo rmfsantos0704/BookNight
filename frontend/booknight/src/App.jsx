@@ -7,6 +7,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import BoardPage from './pages/BoardPage';
+import HowItWorksPage from './pages/HowItWorksPage';
 
 export default function App() {
   return (
@@ -23,6 +24,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <BoardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/how-it-works"
+            element={
+              <ProtectedRoute>
+                <HowItWorksPage />
               </ProtectedRoute>
             }
           />

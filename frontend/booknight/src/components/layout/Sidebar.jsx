@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useBoardStore } from '../../store/useBoardStore';
 import { useUIStore } from '../../store/useUIStore';
 import { useAuth } from '../../context/AuthContext';
@@ -85,7 +86,13 @@ export default function Sidebar() {
         )}
       </nav>
 
-      <div className="border-t border-line-dark pt-4 mt-4">
+      <div className="border-t border-line-dark pt-4 mt-4 space-y-3">
+        <Link
+          to="/how-it-works"
+          className="block text-xs text-line-dark hover:text-line px-1"
+        >
+          How Booknight works
+        </Link>
         <div className="flex items-center justify-between gap-2">
           <p className="min-w-0 text-sm text-line truncate">{user?.displayName || user?.email}</p>
           <button
