@@ -89,8 +89,11 @@ export default function Sidebar() {
       <div className="border-t border-line-dark pt-4 mt-4 space-y-3">
         <Link
           to="/how-it-works"
-          className="block text-xs text-line-dark hover:text-line px-1"
+          className="flex items-center gap-2 rounded-card border border-line-dark bg-graphite-soft px-3 py-2 text-sm text-line transition-all duration-200 hover:border-accent-soft hover:bg-accent hover:text-canvas"
         >
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-current text-xs font-semibold">
+            ?
+          </span>
           How Booknight works
         </Link>
         <div className="flex items-center justify-between gap-2">
