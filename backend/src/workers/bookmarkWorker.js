@@ -1,4 +1,5 @@
 const Bookmark = require('../models/Bookmark');
+const { QUEUE_NAME } = require('../queues/bookmarkQueue');
 
 const parseMeta = (html, field) => {
   const pattern = new RegExp(`<meta[^>]+property=["']og:${field}["'][^>]+content=["']([^"']+)["'][^>]*>`, 'i');
@@ -31,14 +32,20 @@ const extractMetadata = async (url) => {
   }
 };
 
-/**
- * Processes ONE pending bookmark: scrapes it and updates its status.
- * No longer takes a BullMQ job object - just the bookmark doc itself,
- * so it can be called directly from a polling loop instead of a queue.
- */
-const processBookmark = async (bookmark) => {
+const processScrapeJob = async (job) => {
+  const { bookmarkId, url } = job.data || {};
+
+  if (!bookmarkId || !url) {
+    return { status: 'failed', message: 'bookmarkId and url are required' };
+  }
+
   try {
-    const metadata = await extractMetadata(bookmark.url);
+    const bookmark = await Bookmark.findById(bookmarkId);
+    if (!bookmark) {
+      return { status: 'failed', message: 'Bookmark not found' };
+    }
+
+    const metadata = await extractMetadata(url);
 
     bookmark.title = metadata.title || bookmark.title || '';
     bookmark.description = metadata.description || bookmark.description || '';
@@ -48,29 +55,37 @@ const processBookmark = async (bookmark) => {
     bookmark.failureReason = '';
 
     await bookmark.save();
-    return { status: 'completed', bookmarkId: bookmark._id };
+
+    return { status: 'completed', bookmarkId };
   } catch (error) {
-    bookmark.status = 'failed';
-    bookmark.failureReason = error.message;
-    await bookmark.save();
-    return { status: 'failed', bookmarkId: bookmark._id, error: error.message };
+    await Bookmark.findByIdAndUpdate(bookmarkId, {
+      status: 'failed',
+      failureReason: error.message,
+    });
+
+    throw error;
   }
 };
 
-/**
- * Finds every bookmark still marked 'pending' and processes it. Called
- * repeatedly by the polling script instead of listening on a queue.
- */
-const processPendingBookmarks = async () => {
-  const pending = await Bookmark.find({ status: 'pending' }).limit(50);
-  const results = { completed: 0, failed: 0 };
+const startScrapeWorker = async () => {
+  const { Worker } = require('bullmq');
+  const connection = require('../config/redis');
 
-  for (const bookmark of pending) {
-    const result = await processBookmark(bookmark);
-    results[result.status] += 1;
-  }
+  const worker = new Worker(
+    QUEUE_NAME,
+    async (job) => processScrapeJob(job),
+    { connection }
+  );
 
-  return results;
+  worker.on('completed', (job) => {
+    console.log(`Scrape job completed: ${job.id}`);
+  });
+
+  worker.on('failed', (job, err) => {
+    console.error(`Scrape job failed: ${job?.id}`, err.message);
+  });
+
+  return worker;
 };
 
-module.exports = { extractMetadata, processBookmark, processPendingBookmarks };
+module.exports = { startScrapeWorker, processScrapeJob, extractMetadata };
