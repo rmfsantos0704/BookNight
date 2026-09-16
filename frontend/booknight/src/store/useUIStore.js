@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 
 export const useUIStore = create((set) => ({
-  sidebarCollapsed: false,
-  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  mobileSidebarOpen: false,
+  toggleSidebar: () => set((state) => ({ mobileSidebarOpen: !state.mobileSidebarOpen })),
 
   editingBookmarkId: null,
   openEditModal: (bookmarkId) => set({ editingBookmarkId: bookmarkId }),

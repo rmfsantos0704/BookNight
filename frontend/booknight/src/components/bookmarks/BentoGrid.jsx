@@ -1,18 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import BookmarkCard from './BookmarkCard';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 8;
 
 export default function BentoGrid({ bookmarks, loading }) {
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Only reset to page 1 when the actual *set* of bookmarks changes (new
+  // workspace, new search, an item added/removed) - not on every array
+  // reference change. Polling and edits replace the array via .map() every
+  // ~1.5s while a bookmark is pending, which was previously bouncing users
+  // back to page 1 mid-browse even though the visible id list hadn't changed.
+  const idKey = useMemo(() => bookmarks.map((b) => b._id).join(','), [bookmarks]);
+  const prevIdKey = useRef(idKey);
+
   useEffect(() => {
-    setCurrentPage(1);
-  }, [bookmarks]);
+    if (prevIdKey.current !== idKey) {
+      setCurrentPage(1);
+      prevIdKey.current = idKey;
+    }
+  }, [idKey]);
 
   if (loading) {
     return (
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="rounded-card border border-line bg-white/30 animate-pulse h-56" />
         ))}
@@ -37,7 +48,7 @@ export default function BentoGrid({ bookmarks, loading }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {pageBookmarks.map((bookmark) => (
           <BookmarkCard key={bookmark._id} bookmark={bookmark} />
         ))}

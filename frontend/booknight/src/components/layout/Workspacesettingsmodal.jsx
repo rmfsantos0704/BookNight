@@ -180,7 +180,7 @@ export default function WorkspaceSettingsModal() {
         aria-modal="true"
         aria-labelledby="workspace-settings-title"
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md rounded-card bg-canvas border border-line p-6"
+        className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-card bg-canvas border border-line p-6"
       >
         <h2 id="workspace-settings-title" className="font-display text-xl text-ink mb-5">
           Workspace settings
