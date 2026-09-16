@@ -6,7 +6,7 @@ import CaptureBar from '../components/bookmarks/CaptureBar';
 import SearchBar from '../components/bookmarks/SearchBar';
 import BentoGrid from '../components/bookmarks/BentoGrid';
 import EditBookmarkModal from '../components/bookmarks/EditbookmarkModal';
-import WorkspaceSettingsModal from '../components/layout/WorkspaceSettingsModal';
+import WorkspaceSettingsModal from '../components/layout/Workspacesettingsmodal';
 
 export default function BoardPage() {
   const {
