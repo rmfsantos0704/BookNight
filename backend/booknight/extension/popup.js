@@ -1,6 +1,6 @@
 // Points at the deployed Booknight backend/frontend.
 const API_BASE = 'https://book-night-h3oj.vercel.app/api';
-const CLIENT_ORIGIN = 'https://book-night-lilac.vercel.app';
+const CLIENT_ORIGIN = 'https://booknight-rmfs.vercel.app';
 
 const $ = (id) => document.getElementById(id);
 
