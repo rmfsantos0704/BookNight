@@ -7,8 +7,8 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import BoardPage from './pages/BoardPage';
-import HowItWorksPage from './pages/HowItWorksPage';
-import DownloadExtensionPage from './pages/DownloadExtensionPage';
+import HowItWorksPage from './pages/HowitworksPage';
+import DownloadExtensionPage from './pages/DownloadextensionsPage';
 
 export default function App() {
   return (
