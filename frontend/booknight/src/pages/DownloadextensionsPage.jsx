@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 
 // TODO: replace with your actual GitHub Release asset URL once published,
 // e.g. https://github.com/<you>/<repo>/releases/download/v1.0.0/booknight-extension-v1.0.0.zip
-const DOWNLOAD_URL = 'https://github.com/rmfsantos0704/BookNight/releases/tag/Booknight-v1.0.0';
+const DOWNLOAD_URL = 'https://github.com/rmfsantos0704/BookNight/releases/tag/v1.0.0';
 
 const STEPS = [
   {
