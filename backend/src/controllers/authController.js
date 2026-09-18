@@ -126,7 +126,11 @@ const forgotPassword = asyncHandler(async (req, res) => {
   user.resetPasswordExpires = new Date(Date.now() + RESET_TOKEN_TTL_MS);
   await user.save();
 
-  const resetUrl = `${process.env.CLIENT_ORIGIN || 'http://localhost:5173'}/reset-password/${rawToken}`;
+  // CLIENT_ORIGIN may be a comma-separated list (for CORS, multiple allowed
+  // origins) - the reset link needs exactly one URL, so use the first
+  // (primary/canonical) origin in the list, not the raw multi-value string.
+  const primaryOrigin = (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',')[0].trim();
+  const resetUrl = `${primaryOrigin}/reset-password/${rawToken}`;
 
   try {
     await sendPasswordResetEmail(user.email, resetUrl);
