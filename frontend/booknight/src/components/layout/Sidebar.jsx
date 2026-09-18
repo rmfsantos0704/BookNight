@@ -116,7 +116,7 @@ export default function Sidebar() {
           )}
         </nav>
 
-        <div className="border-t border-line-dark pt-4 mt-4 space-y-3">
+        <div className="border-t border-line-dark pt-4 mt-4 space-y-2">
           <Link
             to="/how-it-works"
             className="flex items-center gap-2 rounded-card border border-line-dark bg-graphite-soft px-3 py-2 text-sm text-line transition-all duration-200 hover:border-accent-soft hover:bg-accent hover:text-canvas"
@@ -126,7 +126,16 @@ export default function Sidebar() {
             </span>
             How Booknight works
           </Link>
-          <div className="flex items-center justify-between gap-2">
+          <Link
+            to="/download-extension"
+            className="flex items-center gap-2 rounded-card border border-line-dark bg-graphite-soft px-3 py-2 text-sm text-line transition-all duration-200 hover:border-accent-soft hover:bg-accent hover:text-canvas"
+          >
+            <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 4v10m0 0 3.5-3.5M12 14l-3.5-3.5M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Get the extension
+          </Link>
+          <div className="flex items-center justify-between gap-2 pt-1">
             <p className="min-w-0 text-sm text-line truncate">{user?.displayName || user?.email}</p>
             <button
               onClick={logout}
