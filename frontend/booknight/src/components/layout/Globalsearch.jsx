@@ -111,7 +111,7 @@ export default function GlobalSearch() {
         <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-80 overflow-y-auto rounded-card border border-line-dark bg-graphite-soft shadow-lg">
           {workspaceMatches.length > 0 && (
             <div className="p-2">
-              <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-line/60">Workspaces</p>
+              <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-line/90">Workspaces</p>
               {workspaceMatches.map((ws) => (
                 <button
                   key={ws._id}
@@ -126,7 +126,7 @@ export default function GlobalSearch() {
 
           {(searching || searchError || linkResults.length > 0) && (
             <div className="p-2 border-t border-line-dark/50">
-              <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-line/60">Links</p>
+              <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-line/90">Links</p>
               {searching && <p className="px-2 py-1.5 text-sm text-line/70">Searching…</p>}
               {!searching && searchError && (
                 <p className="px-2 py-1.5 text-sm text-red-400">{searchError}</p>
