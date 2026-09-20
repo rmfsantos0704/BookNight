@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useBoardStore } from '../../store/useBoardStore';
 import { useUIStore } from '../../store/useUIStore';
 import { useAuth } from '../../context/AuthContext';
-import GlobalSearch from './GlobalSearch';
+import GlobalSearch from './Globalsearch';
 
 export default function Sidebar() {
   const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace } = useBoardStore();
