@@ -62,6 +62,7 @@ export const api = {
   listBookmarks: (workspaceId) => request(`/bookmarks?workspaceId=${workspaceId}&limit=60`),
   searchBookmarks: (workspaceId, q) =>
     request(`/bookmarks/search?workspaceId=${workspaceId}&q=${encodeURIComponent(q)}`),
+  searchAllWorkspaces: (q) => request(`/bookmarks/search-all?q=${encodeURIComponent(q)}`),
   createBookmark: (payload) => request('/bookmarks', { method: 'POST', body: payload }),
   getBookmark: (id) => request(`/bookmarks/${id}`),
   updateBookmark: (id, payload) => request(`/bookmarks/${id}`, { method: 'PATCH', body: payload }),

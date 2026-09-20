@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useBoardStore } from '../../store/useBoardStore';
 import { useUIStore } from '../../store/useUIStore';
 import { useAuth } from '../../context/AuthContext';
+import GlobalSearch from './GlobalSearch';
 
 export default function Sidebar() {
   const { workspaces, activeWorkspaceId, setActiveWorkspace, createWorkspace } = useBoardStore();
@@ -54,6 +55,8 @@ export default function Sidebar() {
             </svg>
           </button>
         </div>
+
+        <GlobalSearch />
 
         <nav className="flex-1 space-y-1 overflow-y-auto">
           <p className="text-xs uppercase tracking-wide text-line-dark mb-2 px-2">Workspaces</p>
