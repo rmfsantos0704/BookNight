@@ -85,7 +85,7 @@ export default function GlobalSearch() {
     <div ref={containerRef} className="relative mb-4">
       <div className="relative">
         <svg
-          className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-line-dark"
+          className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-line/50"
           viewBox="0 0 24 24"
           fill="none"
           aria-hidden="true"
@@ -103,7 +103,7 @@ export default function GlobalSearch() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
           placeholder="Search workspaces or links…"
-          className="w-full rounded-card bg-graphite-soft border border-line-dark pl-8 pr-3 py-2 text-sm text-canvas placeholder:text-line-dark outline-none focus-visible:border-accent"
+          className="w-full rounded-card bg-graphite-soft border border-line-dark pl-8 pr-3 py-2 text-sm text-canvas placeholder:text-line/40 outline-none focus-visible:border-accent"
         />
       </div>
 
@@ -111,7 +111,7 @@ export default function GlobalSearch() {
         <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-80 overflow-y-auto rounded-card border border-line-dark bg-graphite-soft shadow-lg">
           {workspaceMatches.length > 0 && (
             <div className="p-2">
-              <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-line-dark">Workspaces</p>
+              <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-line/60">Workspaces</p>
               {workspaceMatches.map((ws) => (
                 <button
                   key={ws._id}
@@ -126,8 +126,8 @@ export default function GlobalSearch() {
 
           {(searching || searchError || linkResults.length > 0) && (
             <div className="p-2 border-t border-line-dark/50">
-              <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-line-dark">Links</p>
-              {searching && <p className="px-2 py-1.5 text-sm text-line-dark">Searching…</p>}
+              <p className="px-2 pb-1 text-[10px] uppercase tracking-wide text-line/60">Links</p>
+              {searching && <p className="px-2 py-1.5 text-sm text-line/70">Searching…</p>}
               {!searching && searchError && (
                 <p className="px-2 py-1.5 text-sm text-red-400">{searchError}</p>
               )}
@@ -140,7 +140,7 @@ export default function GlobalSearch() {
                     className="block w-full rounded-card px-2 py-1.5 text-left hover:bg-graphite"
                   >
                     <p className="text-sm text-line truncate">{bookmark.title || bookmark.url}</p>
-                    <p className="text-xs text-line-dark truncate">
+                    <p className="text-xs text-line/50 truncate">
                       {workspaceNameFor(bookmark.workspaceId)}
                     </p>
                   </button>
@@ -149,7 +149,7 @@ export default function GlobalSearch() {
           )}
 
           {!hasAnyResults && !searching && !searchError && (
-            <p className="px-4 py-3 text-sm text-line-dark">No matches for "{trimmed}".</p>
+            <p className="px-4 py-3 text-sm text-line/60">No matches for "{trimmed}".</p>
           )}
         </div>
       )}
