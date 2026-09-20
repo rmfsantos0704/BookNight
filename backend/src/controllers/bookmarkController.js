@@ -2,7 +2,7 @@ const asyncHandler = require('express-async-handler');
 const mongoose = require('mongoose');
 const Bookmark = require('../models/Bookmark');
 const Workspace = require('../models/Workspace');
-const { normalizeUrl } = require('../utils/Normalizeurl');
+const { normalizeUrl } = require('../utils/normalizeUrl');
 
 // Shared guard: throws unless the current user can access the workspace
 const assertWorkspaceAccess = async (workspaceId, userId) => {
@@ -172,7 +172,94 @@ const deleteBookmark = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Bookmark deleted' });
 });
 
-// @route GET /api/bookmarks/search?workspaceId=&q=
+// @route GET /api/bookmarks/search-all?q=
+// Same fuzzy/autocomplete/boosted search as searchBookmarks, but scoped to
+// every workspace the user owns or is a member of at once (an 'in' filter
+// instead of 'equals' to a single workspace) - powers the sidebar's global
+// search. Returns workspaceId on each result so the client can jump to the
+// right workspace when a result is selected.
+const searchAllWorkspaces = asyncHandler(async (req, res) => {
+  const { q } = req.query;
+
+  if (!q || !q.trim()) {
+    res.status(400);
+    throw new Error('q is required');
+  }
+
+  const accessibleWorkspaces = await Workspace.find({
+    $or: [{ ownerId: req.user._id }, { members: req.user._id }],
+  }).select('_id');
+
+  if (accessibleWorkspaces.length === 0) {
+    return res.json({ success: true, count: 0, bookmarks: [] });
+  }
+
+  const workspaceIds = accessibleWorkspaces.map((w) => w._id);
+  const query = q.trim();
+
+  const results = await Bookmark.aggregate([
+    {
+      $search: {
+        index: 'bookmark_search',
+        compound: {
+          filter: [
+            {
+              in: {
+                path: 'workspaceId',
+                value: workspaceIds,
+              },
+            },
+          ],
+          should: [
+            {
+              autocomplete: {
+                query,
+                path: 'title',
+                score: { boost: { value: 3 } },
+              },
+            },
+            {
+              text: {
+                query,
+                path: 'title',
+                fuzzy: { maxEdits: 1 },
+                score: { boost: { value: 3 } },
+              },
+            },
+            {
+              text: {
+                query,
+                path: 'tags',
+                fuzzy: { maxEdits: 1 },
+                score: { boost: { value: 2 } },
+              },
+            },
+            {
+              text: {
+                query,
+                path: 'description',
+                fuzzy: { maxEdits: 1 },
+                score: { boost: { value: 1 } },
+              },
+            },
+          ],
+          minimumShouldMatch: 1,
+        },
+      },
+    },
+    { $limit: 15 },
+    { $addFields: { score: { $meta: 'searchScore' } } },
+  ]).catch((err) => {
+    res.status(503);
+    throw new Error(
+      `Search failed - the Atlas Search index may still be building or missing. (${err.message})`
+    );
+  });
+
+  res.json({ success: true, count: results.length, bookmarks: results });
+});
+
+
 // Fuzzy, typo-tolerant, autocomplete-aware search across title/tags/description,
 // scoped to one workspace, using the Atlas Search index created by
 // scripts/createSearchIndex.js. Tags and title are boosted above description,
@@ -263,4 +350,5 @@ module.exports = {
   updateBookmark,
   deleteBookmark,
   searchBookmarks,
+  searchAllWorkspaces,
 };
