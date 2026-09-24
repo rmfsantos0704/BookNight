@@ -36,6 +36,15 @@
     <label for="workspace-select">Save to</label>
     <select id="workspace-select"></select>
 
+    <div id="new-workspace-form" class="new-workspace-form hidden">
+      <input id="new-workspace-name" type="text" placeholder="Workspace name" />
+      <div class="new-workspace-actions">
+        <button id="new-workspace-cancel" type="button" class="link-button">Cancel</button>
+        <button id="new-workspace-create" type="button" class="btn-secondary">Create</button>
+      </div>
+      <p id="new-workspace-error" class="error hidden"></p>
+    </div>
+
     <p id="save-error" class="error hidden"></p>
     <p id="save-success" class="success hidden">Saved ✓</p>
 

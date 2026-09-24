@@ -163,3 +163,40 @@ select:focus {
   color: var(--accent-soft);
   text-decoration: underline;
 }
+
+.btn-secondary {
+  padding: 7px 12px;
+  border: 1px solid var(--accent-soft);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent-soft);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--canvas);
+  border-color: var(--accent);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.new-workspace-form {
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid var(--line-dark);
+  border-radius: 8px;
+  background: var(--graphite-soft);
+}
+
+.new-workspace-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}

@@ -45,6 +45,50 @@ function getCurrentTab() {
   });
 }
 
+const NEW_WORKSPACE_VALUE = '__new__';
+let currentToken = null; // set on login/init so the new-workspace handler can reach it
+
+function populateWorkspaceSelect(workspaces, selectedId) {
+  const select = $('workspace-select');
+  select.innerHTML = '';
+
+  workspaces.forEach((ws) => {
+    const opt = document.createElement('option');
+    opt.value = ws._id;
+    opt.textContent = ws.name;
+    select.appendChild(opt);
+  });
+
+  const newOpt = document.createElement('option');
+  newOpt.value = NEW_WORKSPACE_VALUE;
+  newOpt.textContent = '+ New workspace';
+  select.appendChild(newOpt);
+
+  if (selectedId && workspaces.some((w) => w._id === selectedId)) {
+    select.value = selectedId;
+  } else if (workspaces.length === 0) {
+    // Nothing to pick yet - jump straight into creating one.
+    select.value = NEW_WORKSPACE_VALUE;
+    showNewWorkspaceForm();
+  }
+
+  $('save-button').disabled = false;
+}
+
+function showNewWorkspaceForm() {
+  $('new-workspace-form').classList.remove('hidden');
+  $('new-workspace-name').value = '';
+  $('new-workspace-error').classList.add('hidden');
+  $('new-workspace-name').focus();
+}
+
+function hideNewWorkspaceForm(fallbackWorkspaceId) {
+  $('new-workspace-form').classList.add('hidden');
+  if (fallbackWorkspaceId) {
+    $('workspace-select').value = fallbackWorkspaceId;
+  }
+}
+
 // --- main flow ---
 async function init() {
   const { token } = await storage.get('token');
@@ -56,6 +100,7 @@ async function init() {
 
   try {
     await apiRequest('/auth/me', { token }); // validates the stored token
+    currentToken = token;
     await enterMainView(token);
   } catch {
     // Token expired/invalid - clear it and fall back to login.
@@ -66,6 +111,7 @@ async function init() {
 
 async function enterMainView(token) {
   showView('main');
+  currentToken = token;
 
   const tab = await getCurrentTab();
   $('tab-title').textContent = tab.title || tab.url;
@@ -74,29 +120,10 @@ async function enterMainView(token) {
   $('tab-favicon').style.visibility = tab.favIconUrl ? 'visible' : 'hidden';
   $('open-board-link').href = CLIENT_ORIGIN;
 
-  const select = $('workspace-select');
-  select.innerHTML = '';
-
   try {
     const data = await apiRequest('/workspaces', { token });
-    if (data.workspaces.length === 0) {
-      const opt = document.createElement('option');
-      opt.textContent = 'No workspaces yet - create one on the web app';
-      select.appendChild(opt);
-      $('save-button').disabled = true;
-      return;
-    }
-
     const { lastWorkspaceId } = await storage.get('lastWorkspaceId');
-    data.workspaces.forEach((ws) => {
-      const opt = document.createElement('option');
-      opt.value = ws._id;
-      opt.textContent = ws.name;
-      select.appendChild(opt);
-    });
-    if (lastWorkspaceId && data.workspaces.some((w) => w._id === lastWorkspaceId)) {
-      select.value = lastWorkspaceId;
-    }
+    populateWorkspaceSelect(data.workspaces, lastWorkspaceId);
   } catch (err) {
     $('save-error').textContent = err.message;
     $('save-error').classList.remove('hidden');
@@ -139,8 +166,8 @@ $('save-button').addEventListener('click', async () => {
   errorEl.classList.add('hidden');
   successEl.classList.add('hidden');
 
-  if (!workspaceId) {
-    errorEl.textContent = 'No workspace selected.';
+  if (!workspaceId || workspaceId === NEW_WORKSPACE_VALUE) {
+    errorEl.textContent = 'Create or select a workspace first.';
     errorEl.classList.remove('hidden');
     return;
   }
@@ -163,6 +190,56 @@ $('save-button').addEventListener('click', async () => {
   } finally {
     saveBtn.disabled = false;
     saveBtn.textContent = 'Save to Booknight';
+  }
+});
+
+// --- new workspace ---
+$('workspace-select').addEventListener('change', (e) => {
+  if (e.target.value === NEW_WORKSPACE_VALUE) {
+    showNewWorkspaceForm();
+  } else {
+    $('new-workspace-form').classList.add('hidden');
+  }
+});
+
+$('new-workspace-cancel').addEventListener('click', () => {
+  // Fall back to the first real workspace, if any exist, rather than
+  // leaving the sentinel "+ New workspace" option selected with no form.
+  const select = $('workspace-select');
+  const firstReal = [...select.options].find((o) => o.value !== NEW_WORKSPACE_VALUE);
+  hideNewWorkspaceForm(firstReal?.value);
+});
+
+$('new-workspace-create').addEventListener('click', async () => {
+  const name = $('new-workspace-name').value.trim();
+  const errorEl = $('new-workspace-error');
+  const createBtn = $('new-workspace-create');
+
+  errorEl.classList.add('hidden');
+  if (!name) {
+    errorEl.textContent = 'Enter a workspace name.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
+  createBtn.disabled = true;
+  createBtn.textContent = 'Creating…';
+
+  try {
+    const data = await apiRequest('/workspaces', {
+      method: 'POST',
+      token: currentToken,
+      body: { name },
+    });
+    const listData = await apiRequest('/workspaces', { token: currentToken });
+    populateWorkspaceSelect(listData.workspaces, data.workspace._id);
+    hideNewWorkspaceForm(data.workspace._id);
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.remove('hidden');
+  } finally {
+    createBtn.disabled = false;
+    createBtn.textContent = 'Create';
   }
 });
 
