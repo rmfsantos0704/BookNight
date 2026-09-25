@@ -11,4 +11,8 @@ export const useUIStore = create((set) => ({
   managingWorkspaceId: null,
   openWorkspaceSettings: (workspaceId) => set({ managingWorkspaceId: workspaceId }),
   closeWorkspaceSettings: () => set({ managingWorkspaceId: null }),
+
+  viewingBookmarkId: null,
+  openViewModal: (bookmarkId) => set({ viewingBookmarkId: bookmarkId }),
+  closeViewModal: () => set({ viewingBookmarkId: null }),
 }));

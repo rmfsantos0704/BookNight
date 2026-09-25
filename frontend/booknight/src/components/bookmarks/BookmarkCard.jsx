@@ -12,6 +12,7 @@ function faviconOrDot(bookmark) {
 export default function BookmarkCard({ bookmark }) {
   const removeBookmark = useBoardStore((s) => s.removeBookmark);
   const openEditModal = useUIStore((s) => s.openEditModal);
+  const openViewModal = useUIStore((s) => s.openViewModal);
   const isPending = bookmark.status === 'pending' || bookmark.status === 'processing';
   const isFailed = bookmark.status === 'failed';
 
@@ -67,14 +68,16 @@ export default function BookmarkCard({ bookmark }) {
                 </span>
               </div>
 
-              <a
-                href={bookmark.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-display text-base leading-snug text-ink transition hover:text-accent"
+              {/* Clicking the title opens the full-detail view (untruncated
+                  title/description) rather than navigating away - "Open
+                  link" below is the actual navigation action. */}
+              <button
+                onClick={() => openViewModal(bookmark._id)}
+                disabled={isFailed}
+                className="text-left font-display text-base leading-snug text-ink transition hover:text-accent disabled:cursor-default disabled:hover:text-ink"
               >
                 {isFailed ? 'Could not load this link' : bookmark.title || hostname}
-              </a>
+              </button>
 
               {!isFailed && bookmark.description && (
                 <p className="text-sm leading-5 text-ink/60 line-clamp-3">{bookmark.description}</p>

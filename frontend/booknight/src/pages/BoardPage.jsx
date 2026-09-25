@@ -5,8 +5,9 @@ import Sidebar from '../components/layout/Sidebar';
 import CaptureBar from '../components/bookmarks/CaptureBar';
 import SearchBar from '../components/bookmarks/SearchBar';
 import BentoGrid from '../components/bookmarks/BentoGrid';
-import EditBookmarkModal from '../components/bookmarks/EditbookmarkModal';
-import WorkspaceSettingsModal from '../components/layout/Workspacesettingsmodal';
+import EditBookmarkModal from '../components/bookmarks/EditBookmarkModal';
+import BookmarkDetailModal from '../components/bookmarks/BookmarkDetailModal';
+import WorkspaceSettingsModal from '../components/layout/WorkspaceSettingsModal';
 
 export default function BoardPage() {
   const {
@@ -80,6 +81,7 @@ export default function BoardPage() {
         )}
       </main>
       <EditBookmarkModal />
+      <BookmarkDetailModal />
       <WorkspaceSettingsModal />
     </div>
   );
