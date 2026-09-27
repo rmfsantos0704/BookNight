@@ -31,16 +31,17 @@ const extractMetadata = async (url) => {
   }
 };
 
-/**
- * Processes ONE pending bookmark: scrapes it and updates its status.
- * No longer takes a BullMQ job object - just the bookmark doc itself,
- * so it can be called directly from a polling loop instead of a queue.
- */
 const processBookmark = async (bookmark) => {
-  try {
-    const metadata = await extractMetadata(bookmark.url);
+  const { _id: bookmarkId, url } = bookmark;
 
-    bookmark.title = metadata.title || bookmark.title || '';
+  try {
+    const metadata = await extractMetadata(url);
+
+    // If a title was already set when this bookmark was created (e.g. the
+    // extension's "add a title" field, or an edit), keep it - only fall
+    // back to the scraped title when the user didn't provide one. Every
+    // other field always takes the freshest scraped value.
+    bookmark.title = bookmark.title || metadata.title || '';
     bookmark.description = metadata.description || bookmark.description || '';
     bookmark.imageUrl = metadata.imageUrl || bookmark.imageUrl || '';
     bookmark.faviconUrl = metadata.faviconUrl || bookmark.faviconUrl || '';
@@ -48,12 +49,13 @@ const processBookmark = async (bookmark) => {
     bookmark.failureReason = '';
 
     await bookmark.save();
-    return { status: 'completed', bookmarkId: bookmark._id };
+    return { status: 'completed', bookmarkId };
   } catch (error) {
-    bookmark.status = 'failed';
-    bookmark.failureReason = error.message;
-    await bookmark.save();
-    return { status: 'failed', bookmarkId: bookmark._id, error: error.message };
+    await Bookmark.findByIdAndUpdate(bookmarkId, {
+      status: 'failed',
+      failureReason: error.message,
+    });
+    return { status: 'failed', bookmarkId };
   }
 };
 
@@ -95,4 +97,4 @@ const processPendingBookmarks = async (limit = 20) => {
   return results;
 };
 
-module.exports = { extractMetadata, processBookmark, processPendingBookmarks };
+module.exports = { processPendingBookmarks, processBookmark, extractMetadata };

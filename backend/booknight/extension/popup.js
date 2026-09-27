@@ -120,6 +120,11 @@ async function enterMainView(token) {
   $('tab-favicon').style.visibility = tab.favIconUrl ? 'visible' : 'hidden';
   $('open-board-link').href = CLIENT_ORIGIN;
 
+  // Editable title field, pre-filled from the tab's own title so the common
+  // case (keep the page's title) needs no typing, but it can be overridden
+  // before saving.
+  $('bookmark-title').value = tab.title || '';
+
   try {
     const data = await apiRequest('/workspaces', { token });
     const { lastWorkspaceId } = await storage.get('lastWorkspaceId');
@@ -155,44 +160,6 @@ $('login-form').addEventListener('submit', async (e) => {
   }
 });
 
-// --- save current tab ---
-$('save-button').addEventListener('click', async () => {
-  const { token } = await storage.get('token');
-  const workspaceId = $('workspace-select').value;
-  const saveBtn = $('save-button');
-  const errorEl = $('save-error');
-  const successEl = $('save-success');
-
-  errorEl.classList.add('hidden');
-  successEl.classList.add('hidden');
-
-  if (!workspaceId || workspaceId === NEW_WORKSPACE_VALUE) {
-    errorEl.textContent = 'Create or select a workspace first.';
-    errorEl.classList.remove('hidden');
-    return;
-  }
-
-  saveBtn.disabled = true;
-  saveBtn.textContent = 'Saving…';
-
-  try {
-    const tab = await getCurrentTab();
-    await apiRequest('/bookmarks', {
-      method: 'POST',
-      token,
-      body: { url: tab.url, workspaceId },
-    });
-    await storage.set({ lastWorkspaceId: workspaceId });
-    successEl.classList.remove('hidden');
-  } catch (err) {
-    errorEl.textContent = err.message;
-    errorEl.classList.remove('hidden');
-  } finally {
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'Save to Booknight';
-  }
-});
-
 // --- new workspace ---
 $('workspace-select').addEventListener('change', (e) => {
   if (e.target.value === NEW_WORKSPACE_VALUE) {
@@ -203,8 +170,6 @@ $('workspace-select').addEventListener('change', (e) => {
 });
 
 $('new-workspace-cancel').addEventListener('click', () => {
-  // Fall back to the first real workspace, if any exist, rather than
-  // leaving the sentinel "+ New workspace" option selected with no form.
   const select = $('workspace-select');
   const firstReal = [...select.options].find((o) => o.value !== NEW_WORKSPACE_VALUE);
   hideNewWorkspaceForm(firstReal?.value);
@@ -240,6 +205,45 @@ $('new-workspace-create').addEventListener('click', async () => {
   } finally {
     createBtn.disabled = false;
     createBtn.textContent = 'Create';
+  }
+});
+
+// --- save current tab ---
+$('save-button').addEventListener('click', async () => {
+  const { token } = await storage.get('token');
+  const workspaceId = $('workspace-select').value;
+  const title = $('bookmark-title').value.trim();
+  const saveBtn = $('save-button');
+  const errorEl = $('save-error');
+  const successEl = $('save-success');
+
+  errorEl.classList.add('hidden');
+  successEl.classList.add('hidden');
+
+  if (!workspaceId || workspaceId === NEW_WORKSPACE_VALUE) {
+    errorEl.textContent = 'Create or select a workspace first.';
+    errorEl.classList.remove('hidden');
+    return;
+  }
+
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+
+  try {
+    const tab = await getCurrentTab();
+    await apiRequest('/bookmarks', {
+      method: 'POST',
+      token,
+      body: { url: tab.url, workspaceId, title: title || undefined },
+    });
+    await storage.set({ lastWorkspaceId: workspaceId });
+    successEl.classList.remove('hidden');
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.remove('hidden');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save to Booknight';
   }
 });
 
